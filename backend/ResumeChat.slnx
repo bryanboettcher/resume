@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/ResumeChat.Api/ResumeChat.Api.csproj" />
+    <Project Path="src/ResumeChat.Rag/ResumeChat.Rag.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/ResumeChat.Api.Tests/ResumeChat.Api.Tests.csproj" />
+    <Project Path="tests/ResumeChat.Rag.Tests/ResumeChat.Rag.Tests.csproj" />
+  </Folder>
+</Solution>

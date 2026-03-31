@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bryan Boettcher — Software Engineer</title>
+  <meta name="description" content="25+ years building and modernizing production systems. C#/.NET, distributed systems, performance engineering, Kubernetes, open source.">
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+
+  <style>
+    :root {
+      --accent: #4a90d9;
+      --accent-dim: #2d5b8a;
+    }
+
+    [data-bs-theme="light"] {
+      --bg-primary: #ffffff;
+      --bg-secondary: #f8f9fa;
+      --text-primary: #212529;
+      --text-muted: #6c757d;
+      --border-color: #dee2e6;
+    }
+
+    [data-bs-theme="dark"] {
+      --bg-primary: #1a1d21;
+      --bg-secondary: #212529;
+      --text-primary: #e9ecef;
+      --text-muted: #adb5bd;
+      --border-color: #495057;
+    }
+
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      transition: background-color 0.3s, color 0.3s;
+    }
+
+    .section-alt { background-color: var(--bg-secondary); }
+
+    .accent { color: var(--accent); }
+    .accent-dim { color: var(--accent-dim); }
+
+    .hero {
+      min-height: 60vh;
+      display: flex;
+      align-items: center;
+    }
+
+    .section-heading {
+      font-size: 1.1rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--accent);
+      border-bottom: 2px solid var(--accent);
+      padding-bottom: 0.4rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .experience-card {
+      border-left: 3px solid var(--accent);
+      padding-left: 1.25rem;
+      margin-bottom: 2rem;
+    }
+
+    .experience-card h5 { margin-bottom: 0.1rem; }
+    .experience-card .dates {
+      font-style: italic;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+    .experience-card .role {
+      font-style: italic;
+      font-size: 0.95rem;
+      margin-bottom: 0.5rem;
+    }
+    .experience-card ul {
+      padding-left: 1.2rem;
+      margin-bottom: 0;
+    }
+    .experience-card li { margin-bottom: 0.3rem; }
+
+    .skill-badge {
+      display: inline-block;
+      padding: 0.25rem 0.6rem;
+      margin: 0.2rem;
+      border-radius: 0.25rem;
+      font-size: 0.85rem;
+      background-color: var(--accent);
+      color: #fff;
+    }
+
+    .skill-badge.secondary {
+      background-color: transparent;
+      border: 1px solid var(--accent);
+      color: var(--accent);
+    }
+
+    .oss-item {
+      margin-bottom: 1rem;
+    }
+    .oss-item .project-name {
+      font-weight: 700;
+      color: var(--accent);
+    }
+    .oss-item .stars {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .theme-toggle {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      z-index: 1050;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      border-radius: 50%;
+      width: 2.5rem;
+      height: 2.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background-color 0.3s, color 0.3s;
+    }
+    .theme-toggle:hover { color: var(--accent); }
+
+    .contact-link {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    .contact-link:hover { text-decoration: underline; }
+
+    .earlier-role {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.3rem 0;
+      border-bottom: 1px solid var(--border-color);
+    }
+    .earlier-role:last-child { border-bottom: none; }
+
+    .chat-widget {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      z-index: 1040;
+    }
+    .chat-widget .chat-toggle {
+      width: 3.5rem;
+      height: 3.5rem;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      font-size: 1.4rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+      transition: transform 0.2s;
+    }
+    .chat-widget .chat-toggle:hover { transform: scale(1.1); }
+
+    .chat-panel {
+      display: none;
+      position: fixed;
+      bottom: 5rem;
+      right: 1.5rem;
+      width: 380px;
+      max-height: 500px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 0.75rem;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+      flex-direction: column;
+      z-index: 1040;
+    }
+    .chat-panel.open { display: flex; }
+    .chat-panel-header {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--border-color);
+      font-weight: 600;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .chat-panel-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1rem;
+      min-height: 250px;
+    }
+    .chat-panel-footer {
+      padding: 0.75rem;
+      border-top: 1px solid var(--border-color);
+    }
+    .chat-panel-footer .input-group { margin: 0; }
+
+    /* Hide chat on mobile */
+    @media (max-width: 767.98px) {
+      .chat-widget, .chat-panel { display: none !important; }
+    }
+
+    footer { font-size: 0.85rem; color: var(--text-muted); }
+  </style>
+</head>
+
+<body>
+  <!-- Theme Toggle -->
+  <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+    <i class="bi bi-moon-fill" id="themeIcon"></i>
+  </button>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="container">
+      <div class="row justify-content-center">
+        <div class="col-lg-8 text-center" data-aos="fade-up">
+          <h1 class="display-4 fw-bold mb-3">Bryan Boettcher</h1>
+          <p class="lead mb-4">Software Engineer &middot; 25+ Years &middot; Kansas City</p>
+          <p class="mb-4" style="max-width: 680px; margin: 0 auto;">
+            Building and modernizing production systems. Deep .NET expertise from Framework 1.x through .NET 9,
+            performance engineering with SIMD and zero-allocation patterns, distributed systems with MassTransit and Kubernetes,
+            and a track record of shipping pragmatic solutions to complex problems.
+          </p>
+          <div class="d-flex justify-content-center gap-3 flex-wrap mb-3">
+            <a href="mailto:resume@bryanboettcher.com" class="contact-link"><i class="bi bi-envelope"></i> resume@bryanboettcher.com</a>
+            <a href="https://github.com/bryanboettcher" class="contact-link" target="_blank"><i class="bi bi-github"></i> GitHub</a>
+            <a href="https://linkedin.com/in/bryan-boettcher-7397b113" class="contact-link" target="_blank"><i class="bi bi-linkedin"></i> LinkedIn</a>
+            <a href="https://stackoverflow.com/users/644219/bryan-b" class="contact-link" target="_blank"><i class="bi bi-stack-overflow"></i> Stack Overflow</a>
+          </div>
+          <div class="text-center">
+            <a href="/devel/resume.pdf" class="btn btn-outline-primary btn-sm" target="_blank"><i class="bi bi-file-earmark-pdf"></i> Download Resume (PDF)</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Skills -->
+  <section class="section-alt py-5">
+    <div class="container">
+      <div class="row justify-content-center">
+        <div class="col-lg-8" data-aos="fade-up">
+          <h2 class="section-heading">Technical Skills</h2>
+
+          <h6 class="text-uppercase small fw-bold mb-2">Languages &amp; Frameworks</h6>
+          <div class="mb-3">
+            <span class="skill-badge">C#</span>
+            <span class="skill-badge">TypeScript</span>
+            <span class="skill-badge">JavaScript</span>
+            <span class="skill-badge">SQL</span>
+            <span class="skill-badge secondary">Rust</span>
+            <span class="skill-badge secondary">Go</span>
+            <span class="skill-badge secondary">Python</span>
+          </div>
+
+          <h6 class="text-uppercase small fw-bold mb-2">Backend &amp; Data</h6>
+          <div class="mb-3">
+            <span class="skill-badge">ASP.NET Core</span>
+            <span class="skill-badge">MassTransit</span>
+            <span class="skill-badge">Dapper</span>
+            <span class="skill-badge">EF Core</span>
+            <span class="skill-badge">RabbitMQ</span>
+            <span class="skill-badge">SQL Server</span>
+            <span class="skill-badge">PostgreSQL</span>
+            <span class="skill-badge">MongoDB</span>
+          </div>
+
+          <h6 class="text-uppercase small fw-bold mb-2">Cloud &amp; Infrastructure</h6>
+          <div class="mb-3">
+            <span class="skill-badge">Azure</span>
+            <span class="skill-badge">Kubernetes</span>
+            <span class="skill-badge">Docker</span>
+            <span class="skill-badge">ArgoCD</span>
+            <span class="skill-badge secondary">Talos Linux</span>
+            <span class="skill-badge secondary">LINSTOR/DRBD</span>
+            <span class="skill-badge secondary">GitHub Actions</span>
+          </div>
+
+          <h6 class="text-uppercase small fw-bold mb-2">Practices</h6>
+          <div>
+            <span class="skill-badge">DDD</span>
+            <span class="skill-badge">Event-Driven Architecture</span>
+            <span class="skill-badge secondary">SIMD Optimization</span>
+            <span class="skill-badge secondary">Zero-Allocation Patterns</span>
+            <span class="skill-badge secondary">BDD Testing</span>
+            <span class="skill-badge secondary">GitOps</span>
+            <span class="skill-badge">AI-Assisted Development</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Experience -->
+  <section class="py-5">
+    <div class="container">
+      <div class="row justify-content-center">
+        <div class="col-lg-8">
+          <h2 class="section-heading" data-aos="fade-up">Experience</h2>
+
+          <div class="experience-card" data-aos="fade-up">
+            <h5>Call-Trader</h5>
+            <div class="role">Senior/Lead Engineer</div>
+            <div class="dates">June 2024 &ndash; October 2025</div>
+            <ul>
+              <li>Assessed legacy Node.js/Express platform and led ground-up rewrite to .NET 9, expanding from 45 features across 9 domains to 100+ features across 12 domains</li>
+              <li>Designed multi-source ETL pipeline processing 30M recipients and 10&ndash;15M unique addresses with USPS-certified normalization</li>
+              <li>Achieved &lt;10 sec imports for 50K-row datasets, &lt;100ns address lookups via CRC64 hash-based deduplication and in-memory caching</li>
+              <li>Built architecture that enabled team members to ship independently &mdash; lead developer contributed 2.5x the commit volume on established patterns</li>
+              <li>Delivered maintainable codebase with flexible event-driven architecture, hundreds of repeatable SQL migrations, and full CI/CD pipeline</li>
+            </ul>
+          </div>
+
+          <div class="experience-card" data-aos="fade-up">
+            <h5>Taylor Summit Consulting, LLC</h5>
+            <div class="role">Software Architect</div>
+            <div class="dates">2023 &ndash; October 2025</div>
+            <ul>
+              <li>Added urgent huntgroup calling, rule-based on-call scheduling, and facial recognition authentication to iOS-deployed mental health platform</li>
+              <li>Implemented real-time clinical updates via SignalR serving clinicians, patients, and emergency responders</li>
+              <li>Designed mobile device management platform for administrative operations of the clinical system</li>
+              <li>Built scheduled prescription drug pricing engine synchronizing disparate manufacturer sources for small pharmacy real-time lookups</li>
+              <li>Delivered across Azure stack: App Service, Container Apps, Azure SQL, Service Bus, Communications Services, AI Services</li>
+            </ul>
+          </div>
+
+          <div class="experience-card" data-aos="fade-up">
+            <h5>Kansys, Inc.</h5>
+            <div class="role">Software Architect</div>
+            <div class="dates">2020 &ndash; 2023</div>
+            <ul>
+              <li>Promoted from Senior Developer to Architect after identifying fundamental code quality and process issues in legacy telecom billing platform</li>
+              <li>Established coding standards, source control practices, and modern tooling across the development team</li>
+              <li>Replaced legacy Win32 C++ components with extensible C# implementations, achieving 4&ndash;5x performance improvements</li>
+              <li>Encapsulated domain boundaries into injectable, cloud-first services &mdash; eliminating on-prem hosting dependency</li>
+              <li>Achieved 85% unit test coverage and 95% integration test coverage across modernized codebase</li>
+            </ul>
+          </div>
+
+          <div class="experience-card" data-aos="fade-up">
+            <h5>Henry Wurst, Inc. / Mittera Creative Services</h5>
+            <div class="role">Senior Developer</div>
+            <div class="dates">2018 &ndash; 2020</div>
+            <ul>
+              <li>Modernized development practices &mdash; introduced CI/CD, automated testing, coding standards, and mentored junior developers</li>
+              <li>Developed and open-sourced a distributed, queue-driven data processing architecture</li>
+            </ul>
+          </div>
+
+          <div class="experience-card" data-aos="fade-up">
+            <h5>Service Management Group</h5>
+            <div class="role">Senior Developer</div>
+            <div class="dates">2016 &ndash; 2018</div>
+            <ul>
+              <li>Diagnosed and resolved performance issues, improving application response times by 80%</li>
+              <li>Implemented ElasticSearch-based search system and mentored junior developers through code reviews and pair programming</li>
+            </ul>
+          </div>
+
+          <div data-aos="fade-up">
+            <h6 class="fw-bold mb-3">Earlier Roles</h6>
+            <div class="earlier-role"><span>iModules Software</span><span class="text-muted">2014 &ndash; 2016</span></div>
+            <div class="earlier-role"><span>VI Marketing and Branding <small class="text-muted">(6-month contract)</small></span><span class="text-muted">2014</span></div>
+            <div class="earlier-role"><span>Ticket Solutions, Inc. / VeriShip, Inc.</span><span class="text-muted">2011 &ndash; 2013</span></div>
+            <div class="earlier-role"><span>Softek Solutions, Inc.</span><span class="text-muted">2006 &ndash; 2011</span></div>
+            <div class="earlier-role"><span>Cities Unlimited</span><span class="text-muted">2001 &ndash; 2006</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Open Source -->
+  <section class="section-alt py-5">
+    <div class="container">
+      <div class="row justify-content-center">
+        <div class="col-lg-8">
+          <h2 class="section-heading" data-aos="fade-up">Open Source &amp; Community</h2>
+
+          <div class="oss-item" data-aos="fade-up">
+            <a href="https://github.com/Klipper3d/klipper/pull/3164" class="project-name text-decoration-none" target="_blank">Klipper</a> <span class="stars">(11.4K stars)</span>
+            <p class="mb-0">AD597 thermocouple amplifier hardware support for 3D printer firmware</p>
+          </div>
+
+          <div class="oss-item" data-aos="fade-up">
+            <a href="https://github.com/lloesche/valheim-server-docker/pull/748" class="project-name text-decoration-none" target="_blank">Valheim Docker</a> <span class="stars">(2.2K stars)</span>
+            <p class="mb-0">Docker Secrets support for secure credential management</p>
+          </div>
+
+          <div class="oss-item" data-aos="fade-up">
+            <a href="https://github.com/JasperFx/lamar/pull/362" class="project-name text-decoration-none" target="_blank">Lamar IoC</a> <span class="stars">(607 stars)</span>
+            <p class="mb-0">StackOverflowException fix converting recursive resolution to iteration</p>
+          </div>
+
+          <div class="oss-item" data-aos="fade-up">
+            <a href="https://github.com/piraeusdatastore/linstor-csi/pull/411" class="project-name text-decoration-none" target="_blank">LINSTOR-CSI</a> <span class="stars">(126 stars)</span>
+            <p class="mb-0">PVC termination deadlock fix &mdash; AI-assisted contribution in Go</p>
+          </div>
+
+          <div class="oss-item" data-aos="fade-up">
+            <a href="https://github.com/MassTransit/MassTransit/pull/5956" class="project-name text-decoration-none" target="_blank">MassTransit</a> <span class="stars">(7.7K stars)</span>
+            <p class="mb-0">Dapper integration fixes &mdash; partial changes cherry-picked by maintainer</p>
+          </div>
+
+          <div class="oss-item" data-aos="fade-up">
+            <span class="project-name">Stack Overflow</span>
+            <p class="mb-0">~7,400 combined reputation &mdash; benchmark-driven answers across C#, .NET, and performance topics</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="py-4 text-center">
+    <div class="container">
+      <p class="mb-1">Bryan Boettcher &middot; <a href="mailto:resume@bryanboettcher.com" class="contact-link">resume@bryanboettcher.com</a></p>
+      <p class="mb-0">
+        <a href="https://github.com/bryanboettcher" class="contact-link me-2" target="_blank">GitHub</a>
+        <a href="https://linkedin.com/in/bryan-boettcher-7397b113" class="contact-link me-2" target="_blank">LinkedIn</a>
+        <a href="https://stackoverflow.com/users/644219/bryan-b" class="contact-link" target="_blank">Stack Overflow</a>
+      </p>
+    </div>
+  </footer>
+
+  <!-- Chat Widget (desktop only, hidden until backend available) -->
+  <div class="chat-widget d-none d-md-block" id="chatWidget" style="display: none !important;">
+    <button class="chat-toggle" id="chatToggle" aria-label="Open chat">
+      <i class="bi bi-chat-dots-fill"></i>
+    </button>
+  </div>
+
+  <div class="chat-panel" id="chatPanel">
+    <div class="chat-panel-header">
+      <span>Ask about Bryan's experience</span>
+      <button class="btn btn-sm btn-link text-muted p-0" id="chatClose"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <div class="chat-panel-body" id="chatMessages">
+      <p class="text-muted small">Ask me anything about Bryan's technical experience, projects, or approach to engineering challenges.</p>
+    </div>
+    <div class="chat-panel-footer">
+      <div class="input-group">
+        <input type="text" class="form-control form-control-sm" id="chatInput" placeholder="e.g. How would Bryan approach a legacy migration?">
+        <button class="btn btn-sm btn-primary" id="chatSend"><i class="bi bi-send-fill"></i></button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+
+  <script>
+    $(function() {
+      // Initialize AOS
+      AOS.init({
+        duration: 600,
+        once: true,
+        offset: 80
+      });
+
+      // Theme toggle
+      var $html = $('html');
+      var $icon = $('#themeIcon');
+      var stored = localStorage.getItem('theme');
+
+      if (stored) {
+        $html.attr('data-bs-theme', stored);
+        updateIcon(stored);
+      }
+
+      $('#themeToggle').on('click', function() {
+        var current = $html.attr('data-bs-theme');
+        var next = current === 'dark' ? 'light' : 'dark';
+        $html.attr('data-bs-theme', next);
+        localStorage.setItem('theme', next);
+        updateIcon(next);
+      });
+
+      function updateIcon(theme) {
+        $icon.removeClass('bi-moon-fill bi-sun-fill');
+        $icon.addClass(theme === 'dark' ? 'bi-moon-fill' : 'bi-sun-fill');
+      }
+
+      // Chat widget
+      var chatBusy = false;
+
+      $('#chatToggle').on('click', function() {
+        $('#chatPanel').toggleClass('open');
+        if ($('#chatPanel').hasClass('open')) $('#chatInput').focus();
+      });
+
+      $('#chatClose').on('click', function() {
+        $('#chatPanel').removeClass('open');
+      });
+
+      $('#chatSend').on('click', sendChat);
+      $('#chatInput').on('keypress', function(e) {
+        if (e.which === 13) sendChat();
+      });
+
+      function sendChat() {
+        var msg = $('#chatInput').val().trim();
+        if (!msg || chatBusy) return;
+
+        chatBusy = true;
+        $('#chatSend').prop('disabled', true);
+        $('#chatInput').val('');
+
+        var $msgs = $('#chatMessages');
+        $msgs.append('<p class="small mb-2"><strong>You:</strong> ' + $('<span>').text(msg).html() + '</p>');
+
+        var $reply = $('<p class="small mb-2"></p>');
+        $msgs.append($reply);
+        var replyText = '';
+
+        fetch('/devel/api/chat.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: msg })
+        }).then(function(response) {
+          if (!response.ok) {
+            throw new Error(response.status === 429 ? 'Rate limit exceeded. Try again in a minute.' : 'Chat unavailable.');
+          }
+          var reader = response.body.getReader();
+          var decoder = new TextDecoder();
+
+          function read() {
+            return reader.read().then(function(result) {
+              if (result.done) return;
+
+              var text = decoder.decode(result.value, { stream: true });
+              var lines = text.split('\n');
+              for (var i = 0; i < lines.length; i++) {
+                var line = lines[i];
+                if (line.indexOf('data: ') === 0) {
+                  var data = line.substring(6);
+                  if (data === '[DONE]') return;
+                  replyText += data;
+                  $reply.text(replyText);
+                }
+              }
+              $msgs.scrollTop($msgs[0].scrollHeight);
+              return read();
+            });
+          }
+
+          return read();
+        }).catch(function(err) {
+          $reply.html('<em class="text-muted">' + $('<span>').text(err.message).html() + '</em>');
+        }).finally(function() {
+          chatBusy = false;
+          $('#chatSend').prop('disabled', false);
+          $msgs.scrollTop($msgs[0].scrollHeight);
+        });
+      }
+
+      // Progressive enhancement: show chat widget only if backend responds
+      $.get('/devel/api/health.php')
+        .done(function() {
+          $('#chatWidget').removeAttr('style');
+        });
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+## .NET
+backend/**/bin/
+backend/**/obj/
+backend/**/*.user
+
+## IDE
+.vs/
+.idea/
+*.swp
+
+## Secrets
+appsettings.*.json
+!appsettings.json
+!appsettings.Development.json
