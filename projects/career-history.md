@@ -43,15 +43,15 @@ Active personal projects: FastAddress, KbStore, Wyoming-Rust, MPC-UPS, Cloud-Orc
 ### Service Management Group — Senior Developer (2016 – 2018)
 **Key achievement:** 80% performance improvements in some applications
 
-### iModules Software — (role/dates from earlier career, pre-2016)
+### iModules Software (2014 – 2016)
 
-### VI Marketing — (earlier career)
+### VI Marketing and Branding (2014, 6-month contract)
 
-### Ticket Solutions — (earlier career)
+### Ticket Solutions, Inc. / VeriShip, Inc. (2011 – 2013)
 
-### Softek Solutions — (earlier career)
+### Softek Solutions, Inc. (2006 – 2011)
 
-### Cities Unlimited — (earliest known role, career start ~2001)
+### Cities Unlimited (2001 – 2006)
 
 ## Technical Stack (Current)
 **Primary:** C#/.NET 9, ASP.NET Core, MassTransit, Dapper, EF Core, SQL Server, PostgreSQL, MongoDB, RabbitMQ, Angular 19, TypeScript, Docker, Kubernetes, Rust
@@ -60,7 +60,7 @@ Active personal projects: FastAddress, KbStore, Wyoming-Rust, MPC-UPS, Cloud-Orc
 **Practices:** DDD, event-driven architecture, saga state machines, SIMD optimization, zero-allocation patterns, BDD testing, GitOps
 
 ## Education
-Not listed on current resume / not yet captured. Ask Bryan.
+Intentionally omitted from resume.
 
 ## Location
 Kansas City, KS area
