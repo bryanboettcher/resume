@@ -1,26 +1,17 @@
 using System.Net;
 using System.Net.Http.Json;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using ResumeChat.Rag;
 
 namespace ResumeChat.Api.Tests;
 
-// A single factory is shared across the collection so the in-process server
-// only starts once per test run.
 [Collection("Api")]
-public sealed class ChatApiTests : IClassFixture<ApiFactory>
+public sealed class ChatApiTests(ApiFactory factory)
 {
-    private readonly ApiFactory _factory;
-
-    public ChatApiTests(ApiFactory factory) => _factory = factory;
-
     // ── health ──────────────────────────────────────────────────────────────
 
     [Fact]
     public async Task Health_Returns200_WithoutApiKey()
     {
-        var client = _factory.CreateClient();
+        var client = factory.CreateClient();
         var response = await client.GetAsync("/api/chat/health");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -31,7 +22,7 @@ public sealed class ChatApiTests : IClassFixture<ApiFactory>
     [Fact]
     public async Task Chat_Returns401_WhenNoKeyHeader()
     {
-        var client = _factory.CreateClient();
+        var client = factory.CreateClient();
         var response = await client.PostAsJsonAsync("/api/chat", new { Message = "hi" });
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
@@ -40,7 +31,7 @@ public sealed class ChatApiTests : IClassFixture<ApiFactory>
     [Fact]
     public async Task Chat_Returns401_WhenWrongKey()
     {
-        var client = _factory.CreateClient();
+        var client = factory.CreateClient();
         client.DefaultRequestHeaders.Add("X-Api-Key", "wrong-key");
 
         var response = await client.PostAsJsonAsync("/api/chat", new { Message = "hi" });
@@ -49,17 +40,16 @@ public sealed class ChatApiTests : IClassFixture<ApiFactory>
     }
 
     [Fact]
-    public async Task Chat_Returns500_WhenApiKeyNotConfigured()
+    public async Task Chat_FailsStartup_WhenApiKeyNotConfigured()
     {
-        // Factory with no ApiKey in configuration.
-        await using var factory = new WebApplicationFactory<Program>()
-            .WithWebHostBuilder(builder =>
-                builder.UseSetting("ApiKey", ""));
+        // ValidateOnStart causes the host to fail during build when ApiKey is missing.
+        Assert.ThrowsAny<Exception>(() =>
+        {
+            using var noKeyFactory = new Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory<Program>()
+                .WithWebHostBuilder(builder => builder.UseSetting("ApiKey:Key", ""));
 
-        var client = factory.CreateClient();
-        var response = await client.PostAsJsonAsync("/api/chat", new { Message = "hi" });
-
-        Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
+            _ = noKeyFactory.CreateClient();
+        });
     }
 
     // ── streaming ───────────────────────────────────────────────────────────
@@ -67,7 +57,7 @@ public sealed class ChatApiTests : IClassFixture<ApiFactory>
     [Fact]
     public async Task Chat_StreamsSseChunks_WhenValidKey()
     {
-        var client = _factory.CreateClient();
+        var client = factory.CreateClient();
         client.DefaultRequestHeaders.Add("X-Api-Key", ApiFactory.TestApiKey);
 
         var response = await client.PostAsJsonAsync("/api/chat", new { Message = "hello world" });
@@ -77,7 +67,6 @@ public sealed class ChatApiTests : IClassFixture<ApiFactory>
 
         var body = await response.Content.ReadAsStringAsync();
 
-        // Two words → two data lines, plus the terminal [DONE] frame.
         Assert.Contains("data: hello \n\n", body);
         Assert.Contains("data: world \n\n", body);
         Assert.Contains("data: [DONE]\n\n", body);

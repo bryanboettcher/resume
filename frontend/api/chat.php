@@ -7,31 +7,25 @@ $backendUrl = $config['backend_url'];    // e.g. https://resume-chat.k8s.example
 $apiKey     = $config['api_key'];        // shared GUID
 $rateLimit  = $config['rate_limit'];     // requests per window
 $rateWindow = $config['rate_window'];    // window in seconds
-$ratePath   = $config['rate_path'];      // writable dir for rate files
 
-// --- Rate Limiting (IP-based, file-backed) ---
-$ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
-$rateFile = $ratePath . '/' . md5($ip) . '.json';
+// --- Rate Limiting (session-based) ---
+session_start();
 
 $now = time();
-$entry = ['count' => 0, 'window_start' => $now];
-
-if (file_exists($rateFile)) {
-    $entry = json_decode(file_get_contents($rateFile), true) ?: $entry;
-    if ($now - $entry['window_start'] >= $rateWindow) {
-        $entry = ['count' => 0, 'window_start' => $now];
-    }
+if (!isset($_SESSION['rate_window_start']) || $now - $_SESSION['rate_window_start'] >= $rateWindow) {
+    $_SESSION['rate_count'] = 0;
+    $_SESSION['rate_window_start'] = $now;
 }
 
-if ($entry['count'] >= $rateLimit) {
+if ($_SESSION['rate_count'] >= $rateLimit) {
     http_response_code(429);
     header('Content-Type: application/json');
     echo json_encode(['error' => 'Rate limit exceeded. Try again later.']);
     exit;
 }
 
-$entry['count']++;
-file_put_contents($rateFile, json_encode($entry), LOCK_EX);
+$_SESSION['rate_count']++;
+session_write_close();
 
 // --- Request Validation ---
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {

@@ -1,7 +1,7 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
-COPY ResumeChat.sln .
+COPY ResumeChat.slnx .
 COPY src/ResumeChat.Api/ResumeChat.Api.csproj src/ResumeChat.Api/
 COPY src/ResumeChat.Rag/ResumeChat.Rag.csproj src/ResumeChat.Rag/
 COPY tests/ResumeChat.Api.Tests/ResumeChat.Api.Tests.csproj tests/ResumeChat.Api.Tests/
