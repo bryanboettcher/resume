@@ -1,12 +1,14 @@
+using ResumeChat.Rag.Models;
+
 namespace ResumeChat.Rag;
 
-public class HardcodedCompletionProvider : ICompletionProvider
+public sealed class HardcodedCompletionProvider : ICompletionProvider
 {
     public async IAsyncEnumerable<string> CompleteAsync(
-        string prompt,
+        CompletionRequest request,
         [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        foreach (var word in prompt.Split(' '))
+        foreach (var word in request.UserMessage.Split(' '))
         {
             cancellationToken.ThrowIfCancellationRequested();
             await Task.Delay(50, cancellationToken);

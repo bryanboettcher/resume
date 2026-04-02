@@ -1,7 +1,16 @@
 ---
-skill: AI-Driven Development & Agentic Workflows
-tags: [AI, agentic, Claude Code, LLM, automation, multi-agent, workflow]
-relevance: Demonstrates real-world adoption of AI-assisted development beyond simple code completion — full agentic workflows, cross-language contributions, and AI-orchestrated team processes
+title: AI-Driven Development & Agentic Workflows
+tags: [ai, agentic, claude-code, llm, automation, multi-agent, workflow, ml, genetic-algorithm, onnx, openai, azure-cognitive-services]
+related:
+  - evidence/agent-first-development.md
+  - evidence/open-source-contributions.md
+  - evidence/healthcare-pharma-domain.md
+  - projects/call-trader-madera.md
+  - projects/homelab-infrastructure.md
+  - projects/fastaddress-research.md
+  - projects/taylor-summit.md
+category: evidence
+contact: resume@bryanboettcher.com
 ---
 
 # AI-Driven Development — Evidence Portfolio
@@ -107,11 +116,47 @@ The pattern is consistent: AI generates comprehensive analysis, Bryan reviews an
 
 ---
 
+## Evidence: ML/AI Engineering — FastAddress Training Infrastructure
+
+**Repository:** https://github.com/bryanboettcher/FastAddress (neural-embeddings branch)
+
+Bryan's AI usage extends beyond consuming AI services into designing and building ML training systems:
+
+### Genetic Algorithm Pattern Evolution
+Built a GeneticSharp-based evolutionary search system for regex pattern discovery with grammar-aware chromosome representation (19 typed regex tokens across 5 categories), 7 mutation operators, parallelized fitness evaluation, and zero-allocation scoring using `ReadOnlyMemory<WeightedTrainingPair>` and `ref struct`.
+
+### ML.NET Training Infrastructure
+Dual-mode training system: AutoML (1-hour sweep across LightGBM, FastTree, SdcaMaximumEntropy) vs. manual LightGBM with optional CUDA GPU acceleration. Text featurization via word 3-grams + character 5-grams. Automatic strategy planning based on property cardinality analysis.
+
+### Training Orchestration
+TPL Dataflow pipeline (`TransformBlock<TrainingPlan, ITrainingResult>`) for concurrent training execution with pluggable trainer adapters. MediatR-based request/response for decoupled algorithm selection.
+
+### Empirical Research at Scale
+1.5 million training examples analyzed against Lob API validated data. Zipf's law distribution analysis for vocabulary sizing. Self-contained Soundex and Metaphone implementations for phonetic similarity research. Empirical CRC64 collision rate validation at scale.
+
+---
+
+## Evidence: Applied AI in Regulated Healthcare — Taylor Summit
+
+**Project:** Clinical Care Platform for a regional mental health provider (Taylor Summit Consulting)
+
+Bryan built AI-powered clinical workflows in a HIPAA-sensitive healthcare context:
+
+- **Real-time speech-to-text** via Azure Cognitive Services Speech with SignalR streaming during behavioral health counseling sessions
+- **Clinical session summarization** via OpenAI with iterative prompt engineering (4 prompt iterations visible) incorporating patient demographics, treatment modality identification, and coping skills extraction
+- **Facial recognition for patient identity** via FaceAiSharp/ONNX Runtime for on-device ML inference — no cloud dependency for inference, embedding vector comparison via dot product
+
+This is AI in a regulated context where accuracy, auditability, and data privacy aren't optional features — they're compliance requirements.
+
+---
+
 ## Summary
 
-Bryan's AI-driven development practice operates at three levels:
+Bryan's AI-driven development practice operates at four levels:
 1. **Tactical:** Using AI to extend reach into unfamiliar languages and codebases (Go contribution to linstor-csi)
 2. **Operational:** Using specialized AI agents to manage infrastructure and development workflows (homelab, Madera)
 3. **Strategic:** Designing multi-agent systems that decompose complex development tasks into specialized roles with appropriate context scoping (11-agent Madera configuration)
 
-This is not "I use Copilot for autocomplete." This is treating AI as a composable engineering tool with intentional architecture around how and when different AI capabilities are applied.
+4. **Engineering:** Designing ML training infrastructure (genetic algorithms, ML.NET pipelines, training orchestration) and integrating AI services into regulated healthcare workflows (clinical transcription, facial recognition, session summarization)
+
+This is not "I use Copilot for autocomplete." This is treating AI as a composable engineering tool with intentional architecture around how and when different AI capabilities are applied — and building the training systems that produce the models.

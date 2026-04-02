@@ -1,9 +1,21 @@
 ---
-project: Madera Direct Mail Platform
-company: Call-Trader
-dates: June 2024 – October 2025
-role: Senior/Lead Engineer
-tags: [dotnet, masstransit, angular, etl, address-normalization, direct-mail, sql-server]
+title: Madera Direct Mail Platform
+tags: [dotnet, masstransit, angular, etl, address-normalization, direct-mail, sql-server, rabbitmq, dapper, aspire, ci-cd, performance, saga-orchestration]
+related:
+  - evidence/distributed-systems-architecture.md
+  - evidence/data-engineering-etl.md
+  - evidence/etl-pipeline-framework.md
+  - evidence/performance-optimization.md
+  - evidence/frontend-web-development.md
+  - evidence/leadership-mentoring.md
+  - evidence/dotnet-csharp-expertise.md
+  - evidence/infrastructure-devops.md
+  - evidence/cloud-azure-experience.md
+  - evidence/ai-driven-development.md
+  - projects/fastaddress-research.md
+  - projects/career-history.md
+category: project
+contact: resume@bryanboettcher.com
 ---
 
 # Madera Direct Mail Platform — Project Narrative
@@ -86,6 +98,23 @@ V8 (Microsoft.ClearScript) for user-configurable field transformations during im
 ## Legacy System Context
 
 The rewrite expanded the system from 45 features across 9 domains (Node.js/Express) to 100+ features across 12 domains (.NET 9), with a 60% feature overlap and 40% net-new capabilities. The architectural upgrade introduced MassTransit saga orchestration, generic pipeline framework, address normalization caching, and comprehensive testing infrastructure not present in the original system.
+
+## Advanced Patterns (from branch analysis)
+
+### Multi-Tenant Single-Binary Deployment
+The same `Madera.Workflows` binary is deployed as 4 separate instances via .NET Aspire, each differentiated by the `Madera__Dataflow` environment variable. Convoso, Dispos, DirectMail, and Ringba workflows share identical code but process only their designated data source at runtime — eliminating per-dataflow build artifacts while maintaining runtime isolation.
+
+### SQL Server In-Memory OLTP
+Import staging uses memory-optimized tables (`MEMORY_OPTIMIZED = ON, DURABILITY = SCHEMA_ONLY`) with hash indexes (`BUCKET_COUNT=4096`) for O(1) address deduplication during bulk processing. Memory-optimized TVPs pass bulk data to stored procedures without tempdb overhead.
+
+### Saga Entity Deduplication
+An `AddressStateMachine` prototype uses CRC64 hash-based saga correlation for automatic cross-batch address deduplication. When duplicates arrive, the saga publishes merge events and finalizes the duplicate rather than rejecting it — maintaining referential integrity across independent import batches.
+
+### Incremental ORM Migration
+Gradual Dapper → EF Core transition using a dual-access consumer pattern (both `IConnectionProvider` and `DirectMailDbContext` injected). Complex reports stay as stored procedures; CRUD migrates to EF Core. The `DirectMailDbContext` extends MassTransit's `SagaDbContext` to share a single context for domain entities and saga state.
+
+### Custom .NET Aspire Resources
+Extended Aspire with custom resource types: `FileStore` (shared bind-mount abstraction for MassTransit MessageData) and `GroupResource` (visual dashboard hierarchy with `ResourceNotificationService` eventing). The AppHost orchestrates 8+ services with dependency ordering via `WaitFor()` and `WaitForCompletion()`.
 
 ## What This Project Begat
 

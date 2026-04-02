@@ -1,0 +1,15 @@
+services:
+  postgres-corpus:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: resume_corpus
+      POSTGRES_USER: corpus
+      POSTGRES_PASSWORD: corpus
+    ports:
+      - "5433:5432"
+    volumes:
+      - corpus-pgdata:/var/lib/postgresql/data
+
+volumes:
+  corpus-pgdata:
+    external: false

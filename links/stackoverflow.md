@@ -1,6 +1,15 @@
 ---
-type: link-registry
-category: Stack Overflow & Stack Exchange
+title: Stack Overflow & Stack Exchange Profiles
+tags: [stack-overflow, community, csharp, performance, data-structures, linq, architecture]
+related:
+  - evidence/open-source-contributions.md
+  - evidence/performance-optimization.md
+  - evidence/dotnet-csharp-expertise.md
+  - evidence/data-engineering-etl.md
+  - evidence/frontend-web-development.md
+  - links/external-profiles.md
+category: links
+contact: resume@bryanboettcher.com
 ---
 
 # Stack Overflow & Stack Exchange — Link Registry

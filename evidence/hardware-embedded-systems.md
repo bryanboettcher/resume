@@ -1,7 +1,15 @@
 ---
-skill: Hardware Design & Embedded Systems
-tags: [KiCAD, embedded, Rust, IoT, PCB, microcontroller, RP2040, home-automation, 3D-printing]
-relevance: Demonstrates full-stack capability extending below the software layer into hardware design, embedded programming, and IoT integration
+title: Hardware Design & Embedded Systems
+tags: [kicad, embedded, rust, iot, pcb-design, rp2040, home-automation, 3d-printing, cross-compilation, alsa, state-machine]
+related:
+  - projects/mpc-ups-hardware.md
+  - projects/wyoming-rust.md
+  - projects/cloud-orca-slicer.md
+  - projects/homelab-infrastructure.md
+  - evidence/infrastructure-devops.md
+  - links/github-repos.md
+category: evidence
+contact: resume@bryanboettcher.com
 ---
 
 # Hardware Design & Embedded Systems — Evidence Portfolio

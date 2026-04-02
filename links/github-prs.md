@@ -1,6 +1,13 @@
 ---
-type: link-registry
-category: GitHub Pull Requests
+title: GitHub Pull Requests
+tags: [open-source, pull-requests, csharp, go, python, shell, masstransit, lamar, kubernetes, linstor]
+related:
+  - evidence/open-source-contributions.md
+  - evidence/distributed-systems-architecture.md
+  - evidence/infrastructure-devops.md
+  - links/github-repos.md
+category: links
+contact: resume@bryanboettcher.com
 ---
 
 # GitHub Pull Requests — Link Registry

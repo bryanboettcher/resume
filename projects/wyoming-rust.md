@@ -1,9 +1,13 @@
 ---
-project: Wyoming-Rust Voice Satellite
-company: Personal
-dates: 2025 – present
-role: Sole Developer
-tags: [rust, embedded, iot, home-assistant, cross-compilation, state-machine]
+title: Wyoming-Rust Voice Satellite
+tags: [rust, embedded, iot, home-assistant, cross-compilation, state-machine, arm, alsa, docker, multi-arch]
+related:
+  - evidence/hardware-embedded-systems.md
+  - evidence/infrastructure-devops.md
+  - projects/homelab-infrastructure.md
+  - links/github-repos.md
+category: project
+contact: resume@bryanboettcher.com
 ---
 
 # Wyoming-Rust — Project Narrative

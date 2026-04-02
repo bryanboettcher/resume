@@ -1,6 +1,17 @@
 ---
-type: link-registry
-category: GitHub Repositories
+title: GitHub Repositories
+tags: [github, repositories, open-source, csharp, rust, go, typescript, powershell]
+related:
+  - links/github-prs.md
+  - links/external-profiles.md
+  - projects/wyoming-rust.md
+  - projects/kbstore-ecommerce.md
+  - projects/fastaddress-research.md
+  - projects/dst-dedicated-server.md
+  - evidence/hardware-embedded-systems.md
+  - evidence/open-source-contributions.md
+category: links
+contact: resume@bryanboettcher.com
 ---
 
 # GitHub Repositories — Link Registry
@@ -27,7 +38,7 @@ category: GitHub Repositories
 | Repo | Language | Contribution |
 |------|----------|-------------|
 | [bryanboettcher/linstor-csi](https://github.com/bryanboettcher/linstor-csi) | Go | Fork for PVC deadlock fix (PR #411 merged upstream) |
-| [bryanboettcher/dst-dedicated-server](https://github.com/bryanboettcher/dst-dedicated-server) | Lua/Shell | Don't Starve Together Docker server |
+| [bryanboettcher/dst-dedicated-server](https://github.com/bryanboettcher/dst-dedicated-server) | Go/Shell | DST dedicated server with Go supervisor, health API, and web management dashboard |
 | [bryanboettcher/valheim-server-docker](https://github.com/bryanboettcher/valheim-server-docker) | Shell | Docker Secrets support (PR #748 merged upstream) |
 | [bryanboettcher/MassTransit](https://github.com/bryanboettcher/MassTransit) | C# | Fork for saga repository work |
 | [bryanboettcher/frigate](https://github.com/bryanboettcher/frigate) | TypeScript | NVR with object detection |

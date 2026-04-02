@@ -1,4 +1,5 @@
 using ResumeChat.Rag;
+using ResumeChat.Rag.Models;
 
 namespace ResumeChat.Rag.Tests;
 
@@ -6,10 +7,12 @@ public sealed class HardcodedCompletionProviderTests
 {
     private readonly HardcodedCompletionProvider _provider = new();
 
+    private static CompletionRequest Request(string message) => new(message, []);
+
     [Fact]
     public async Task CompleteAsync_ReturnsAllWordsFromInput()
     {
-        var chunks = await CollectAsync(_provider.CompleteAsync("hello world foo"));
+        var chunks = await CollectAsync(_provider.CompleteAsync(Request("hello world foo")));
 
         // Each word gets a trailing space appended; order and count must match.
         Assert.Equal(["hello ", "world ", "foo "], chunks);
@@ -18,7 +21,7 @@ public sealed class HardcodedCompletionProviderTests
     [Fact]
     public async Task CompleteAsync_SingleWord_ReturnsSingleChunk()
     {
-        var chunks = await CollectAsync(_provider.CompleteAsync("only"));
+        var chunks = await CollectAsync(_provider.CompleteAsync(Request("only")));
 
         Assert.Single(chunks);
         Assert.Equal("only ", chunks[0]);
@@ -29,7 +32,7 @@ public sealed class HardcodedCompletionProviderTests
     {
         // string.Split(' ') on "" returns [""], so one empty-word chunk is emitted.
         // Documenting actual behaviour rather than asserting an idealised one.
-        var chunks = await CollectAsync(_provider.CompleteAsync(""));
+        var chunks = await CollectAsync(_provider.CompleteAsync(Request("")));
 
         Assert.Single(chunks);
         Assert.Equal(" ", chunks[0]);
@@ -44,7 +47,7 @@ public sealed class HardcodedCompletionProviderTests
         // cancellation fires between yields rather than before enumeration starts.
         await Assert.ThrowsAnyAsync<OperationCanceledException>(async () =>
         {
-            await foreach (var _ in _provider.CompleteAsync("one two three four five", cts.Token))
+            await foreach (var _ in _provider.CompleteAsync(Request("one two three four five"), cts.Token))
             {
                 await cts.CancelAsync();
             }
@@ -59,7 +62,7 @@ public sealed class HardcodedCompletionProviderTests
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(async () =>
         {
-            await foreach (var _ in _provider.CompleteAsync("one two", cts.Token)) { }
+            await foreach (var _ in _provider.CompleteAsync(Request("one two"), cts.Token)) { }
         });
     }
 

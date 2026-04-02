@@ -1,9 +1,12 @@
 ---
-project: Cloud-Orca 3D Printer Slicer
-company: Personal
-dates: 2025 – present
-role: Sole Developer
-tags: [dotnet, angular, threejs, 3d-printing, docker, adapter-pattern]
+title: Cloud-Orca 3D Printer Slicer
+tags: [dotnet, angular, threejs, 3d-printing, docker, adapter-pattern, webgl, docker-compose, minimal-api]
+related:
+  - evidence/frontend-web-development.md
+  - evidence/hardware-embedded-systems.md
+  - evidence/infrastructure-devops.md
+category: project
+contact: resume@bryanboettcher.com
 ---
 
 # Cloud-Orca — Project Narrative

@@ -1,7 +1,19 @@
 ---
-skill: C# / .NET Ecosystem Expertise
-tags: [csharp, dotnet, aspnet, ef-core, dapper, linq, async, testing, architecture]
-relevance: Primary professional language for 20+ years with deep framework knowledge demonstrated through production systems, open source contributions, and community engagement
+title: C# / .NET Ecosystem Expertise
+tags: [csharp, dotnet, aspnet, ef-core, dapper, linq, async, testing, architecture, simd, masstransit, aspire, minimal-apis]
+related:
+  - evidence/performance-optimization.md
+  - evidence/distributed-systems-architecture.md
+  - evidence/data-engineering-etl.md
+  - evidence/open-source-contributions.md
+  - evidence/etl-pipeline-framework.md
+  - projects/call-trader-madera.md
+  - projects/kbstore-ecommerce.md
+  - projects/fastaddress-research.md
+  - projects/career-history.md
+  - links/stackoverflow.md
+category: evidence
+contact: resume@bryanboettcher.com
 ---
 
 # C# / .NET Ecosystem Expertise — Evidence Portfolio
@@ -70,6 +82,15 @@ Added `ConfigureAwait(false)` across async code paths — demonstrates understan
 
 ### Custom MassTransit.DapperIntegration Library
 Built a local library for Dapper-based saga persistence at Call-Trader, motivated by performance requirements that EF Core couldn't meet. This library directly informed the upstream MassTransit contributions.
+
+### Dapper.Contrib Fork — IL Emit Column-Level Dirty Tracking (Taylor Summit)
+Extended the official Dapper.Contrib with runtime proxy generation via `System.Reflection.Emit`:
+- `IProxyDetails` interface with `GetDirtyFields()` and `ResetChanges()` — enabling partial UPDATE statements that only write changed columns
+- IL Emit generates proxy types at runtime that intercept property setters and record modifications to a `HashSet<string>`
+- Reduces SQL bandwidth and column locks in high-concurrency healthcare scenarios
+
+### Roslyn Source Generator — Streaming JSON Deserializer (Taylor Summit)
+`ISourceGenerator` in a data synchronization project for a regional mental health provider, emitting a streaming JSON deserializer with manual buffer management. The source generator produces optimized deserialization code at compile time for schema-agnostic data pipeline streaming via `IAsyncEnumerable<IDictionary<string, object?>>`.
 
 ---
 

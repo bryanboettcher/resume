@@ -1,7 +1,14 @@
 ---
-skill: Frontend & Web Development
-tags: [Angular, TypeScript, Three.js, HTML5, responsive, SPA, testing]
-relevance: Demonstrates modern frontend capability complementing deep backend expertise — not just a backend dev who touches HTML
+title: Frontend & Web Development
+tags: [angular, typescript, threejs, rxjs, jest, msw, spa, docker, nginx, webpack, html5]
+related:
+  - projects/kbstore-ecommerce.md
+  - projects/call-trader-madera.md
+  - projects/cloud-orca-slicer.md
+  - evidence/dotnet-csharp-expertise.md
+  - links/stackoverflow.md
+category: evidence
+contact: resume@bryanboettcher.com
 ---
 
 # Frontend & Web Development — Evidence Portfolio

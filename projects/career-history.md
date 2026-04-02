@@ -1,6 +1,13 @@
 ---
-type: career-history
-description: Complete career timeline with corrected dates and details from user
+title: Bryan Boettcher Career History
+tags: [career, timeline, csharp, dotnet, leadership, architecture]
+related:
+  - projects/call-trader-madera.md
+  - projects/taylor-summit.md
+  - evidence/leadership-mentoring.md
+  - evidence/dotnet-csharp-expertise.md
+category: project
+contact: resume@bryanboettcher.com
 ---
 
 # Bryan Boettcher — Career History
@@ -23,13 +30,18 @@ Active personal projects: FastAddress, KbStore, Wyoming-Rust, MPC-UPS, Cloud-Orc
 - Established testing strategy (NUnit3 BDD, NSubstitute, Shouldly, Testcontainers)
 - Designed CI/CD pipelines (8 GitHub Actions workflows)
 - Expanded system from 45 features/9 domains to 100+ features/12 domains
-**NOTE:** This role is NOT on the current resume. Must be added.
-**NOTE:** Overlaps with Taylor Summit (concurrent employment).
 
 ### Taylor Summit Consulting, LLC — Software Architect/Lead (2023 – October 2025)
-**Focus:** Rapid development with high maintainability
-**Tech:** C#, .NET Core, Azure, AWS
-**NOTE:** End date corrected from "present" to October 2025.
+**Focus:** Healthcare/pharmaceutical platform spanning pharmacy management, clinical patient care, and mobile device management
+**Domains:** Pharmacy dispensing & adjudication (NCPDP), drug supply chain traceability (DSCSA/EPCIS/GS1), clinical telehealth (behavioral health), mobile device management (Apple MDM/Android Enterprise), medical device tracking
+**Tech:** .NET 6–9, ASP.NET Core, MassTransit, Dapper, EF Core, Azure (Functions, Service Bus, Cognitive Services, Notification Hubs), AWS (Lambda, S3), Angular 17, ONNX Runtime, ML.NET, .NET Aspire 9.3.1
+**Key achievements:**
+- Built full MDM server from scratch with PKI certificate chain management (self-signed CA, device identity certs, Apple push certs)
+- Implemented NCPDP Telecommunications binary protocol for pharmacy claims adjudication
+- Designed AI-powered clinical workflows: real-time speech-to-text, facial recognition for patient ID, OpenAI session summarization
+- Rearchitected medical device tracking from imperative CRUD (330 files) to event-sourced MassTransit sagas (126 files)
+- Extended Dapper.Contrib with IL Emit-based column-level dirty tracking
+- Co-authored internal NuGet package (TaylorSummit-Core) shared across 20+ microservices
 
 ### Kansys, Inc. — Software Architect/Lead (2020 – 2023)
 **Domain:** Telecom billing

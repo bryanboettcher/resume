@@ -1,9 +1,11 @@
 ---
-project: MPC-UPS Custom UPS
-company: Personal
-dates: 2025 – present
-role: Hardware Designer
-tags: [kicad, hardware, embedded, rp2040, power-electronics, pcb-design]
+title: MPC-UPS Custom UPS Hardware
+tags: [kicad, hardware, embedded, rp2040, power-electronics, pcb-design, spice, usb-hid, i2c, analog-design]
+related:
+  - evidence/hardware-embedded-systems.md
+  - projects/homelab-infrastructure.md
+category: project
+contact: resume@bryanboettcher.com
 ---
 
 # MPC-UPS — Project Narrative

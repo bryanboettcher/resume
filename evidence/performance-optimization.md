@@ -1,7 +1,16 @@
 ---
-skill: Performance Optimization
-tags: [benchmarking, SIMD, zero-allocation, data-structures, profiling, throughput]
-relevance: Demonstrates a benchmark-driven, measurement-first approach to performance work across multiple projects and contexts
+title: Performance Optimization
+tags: [benchmarking, simd, zero-allocation, performance, data-structures, profiling, throughput, avx2, span, sql-server, in-memory-oltp]
+related:
+  - projects/fastaddress-research.md
+  - projects/call-trader-madera.md
+  - evidence/data-engineering-etl.md
+  - evidence/dotnet-csharp-expertise.md
+  - evidence/etl-pipeline-framework.md
+  - evidence/open-source-contributions.md
+  - links/stackoverflow.md
+category: evidence
+contact: resume@bryanboettcher.com
 ---
 
 # Performance Optimization — Evidence Portfolio
@@ -38,8 +47,21 @@ FastAddress is a high-performance semantic address matching library targeting in
 - **Bit-packing:** Compact representation of address metadata using bitwise flags
 - **CRC64 hashing:** For O(1) deduplication across millions of addresses
 
+### SIMD Intrinsics for Token Processing
+Beyond the AVX2/AVX-512 cosine similarity work, Bryan uses `System.Runtime.Intrinsics` (`Vector128`) for lower-level token operations:
+- **Token comparison:** `Vector128.Equals` and `Vector128.LoadUnsafe` for batch character comparison during address token matching
+- **Period stripping:** SIMD-accelerated punctuation removal from address tokens (e.g., "P.O." → "PO")
+- **Hash-based abbreviation lookup:** `FrozenDictionary<uint, uint>` maps FNV-1a string hashes to normalized forms — hashes on `ReadOnlySpan<char>` to avoid string allocations entirely. This replaces traditional `Dictionary<string, string>` for the 220+ USPS abbreviation table.
+
+### BenchmarkDotNet-Validated Performance
+The `AddressDigest` implementation (a 1,165-line `readonly struct`) has been benchmarked at:
+- **266ns** per address creation (from raw string input to normalized digest)
+- **104ns** per distance calculation (between two digests)
+- **480 bytes** allocated per creation (struct fields, no GC-tracked objects on comparison path)
+- **Target scale:** 80 million address instances, up to 625 billion potential comparisons
+
 ### Current Status
-Phase 1 complete with 13 passing tests. Naive baseline implemented with USPS normalization. Neural embedding pipeline (Phase 2) designed but not yet implemented. BenchmarkDotNet integration planned for formal regression tracking.
+Phase 1 complete with 13 passing tests. Naive baseline implemented with USPS normalization. Neural embedding pipeline (Phase 2) designed but not yet implemented.
 
 ---
 
@@ -80,6 +102,30 @@ Bryan wrote a complete benchmark implementation comparing two data structure app
 **Question:** "Automapper running extremely slow on mapping 1400 records"
 
 Rather than theorizing about AutoMapper's overhead, Bryan benchmarked it at 85,000 maps/second on a 2.0GHz Xeon and demonstrated it was 60x slower than manual property copying. The answer quantifies the overhead precisely, allowing the questioner to make an informed architectural decision about whether the convenience tradeoff is acceptable for their use case.
+
+---
+
+## Evidence: SQL Server In-Memory OLTP for High-Throughput Staging
+
+**Repository:** github.com/Call-Trader/madera-apps (private)
+**Branch:** `183-allow-hashpepper-to-be-a-configuration-setting`
+
+Bryan used SQL Server's In-Memory OLTP engine (a niche feature most developers never touch) as high-throughput scratch space during import processing:
+
+### Memory-Optimized Staging Tables
+- `MEMORY_OPTIMIZED = ON, DURABILITY = SCHEMA_ONLY` — volatile in-memory tables that survive only within the SQL Server process lifetime, used as import staging buffers where durability isn't needed
+- **Hash indexes with explicit bucket sizing:** `BUCKET_COUNT=4096` for O(1) lookups on `AddressHash` during deduplication, tuned to expected batch sizes to minimize hash collisions
+- **Memory-optimized table-valued parameters (TVPs):** Bulk data passed to stored procedures via memory-optimized TVPs, avoiding the tempdb overhead of traditional TVPs
+
+### SQL Query Optimizer Awareness
+- **`OPTION (OPTIMIZE FOR (@importLogId UNKNOWN))`** — prevents plan cache pollution when batch sizes vary wildly (50K–500K rows), forcing the optimizer to generate a generic plan rather than caching a plan optimized for one specific batch size
+- **Explicit index hints:** `WITH (INDEX(...))` on staging table queries where the optimizer's choice was suboptimal for the known access pattern
+- **Snapshot isolation:** `MEMORY_OPTIMIZED_ELEVATE_TO_SNAPSHOT` for lock-free reads against memory-optimized tables
+
+### SQL Deadlock/Timeout Resilience
+- **Specific SqlException detection:** `SqlException.Number == 1205` (deadlock victim) and `Number == -2` (timeout) — not generic exception catching
+- **Differentiated retry policies via MassTransit:** Exponential backoff (5 retries, 3s–60s) for transient SQL failures vs. long-interval retry (6 retries at 30-minute intervals) for systemic failures
+- **Domain exception wrapping:** `DataMigrationException` for targeted retry scope — only data migration operations get the aggressive retry policy, not all SQL exceptions
 
 ---
 

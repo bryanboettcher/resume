@@ -1,9 +1,13 @@
 ---
-project: KbStore E-Commerce Platform
-company: Personal (KB3D RC Hobby Shop)
-dates: 2025 – present
-role: Sole Developer / Architect
-tags: [dotnet, masstransit, angular, ddd, event-driven, postgresql, mongodb, aspire]
+title: KbStore E-Commerce Platform
+tags: [dotnet, masstransit, angular, ddd, event-driven, postgresql, mongodb, aspire, rabbitmq, nunit, docker]
+related:
+  - evidence/distributed-systems-architecture.md
+  - evidence/frontend-web-development.md
+  - evidence/dotnet-csharp-expertise.md
+  - links/github-repos.md
+category: project
+contact: resume@bryanboettcher.com
 ---
 
 # KbStore E-Commerce Platform — Project Narrative

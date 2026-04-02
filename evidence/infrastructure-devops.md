@@ -1,7 +1,19 @@
 ---
-skill: Infrastructure, DevOps & Kubernetes
-tags: [kubernetes, docker, k8s, talos, GitOps, ArgoCD, CI/CD, storage, networking, homelab]
-relevance: Demonstrates hands-on production Kubernetes operation, storage architecture, CI/CD pipeline design, and infrastructure-as-code practices
+title: Infrastructure, DevOps & Kubernetes
+tags: [kubernetes, docker, talos, gitops, argocd, ci-cd, linstor, drbd, traefik, metallb, github-actions, aspire, opentelemetry, cross-compilation]
+related:
+  - projects/homelab-infrastructure.md
+  - projects/call-trader-madera.md
+  - projects/wyoming-rust.md
+  - projects/dst-dedicated-server.md
+  - projects/cloud-orca-slicer.md
+  - evidence/distributed-systems-architecture.md
+  - evidence/open-source-contributions.md
+  - evidence/agent-first-development.md
+  - evidence/cloud-azure-experience.md
+  - evidence/hardware-embedded-systems.md
+category: evidence
+contact: resume@bryanboettcher.com
 ---
 
 # Infrastructure & DevOps — Evidence Portfolio
@@ -86,8 +98,35 @@ Bryan's LINSTOR-CSI contribution came directly from operating this storage infra
 - Automated builds pushing to GitHub Container Registry (ghcr.io)
 - Environment-specific deployment configurations
 
-### Local Development
-- .NET Aspire orchestration for spinning up the full service mesh locally (API server, RabbitMQ, SQL Server, Angular dev server)
+### Local Development — .NET Aspire with Custom Resources
+Bryan extended .NET Aspire beyond standard usage by authoring custom Aspire resource types:
+
+#### Custom Resource: `FileStore`
+A shared bind-mount abstraction for MassTransit MessageData. The `FileStore` resource exposes `AddFileStore()` and `WithBindMount()` extension methods (overloaded for both `ContainerResource` and `ProjectResource`), enabling a single declarative statement to wire up shared filesystem paths across all services that need large message payload storage.
+
+#### Custom Resource: `GroupResource`
+A visual grouping abstraction for the Aspire dashboard. Implements parent/child relationships with `ResourceNotificationService` eventing — when a parent GroupResource starts, child resources are notified and displayed hierarchically in the dashboard. This is non-trivial Aspire extension work using the `ResourceReadyEvent` subscription pattern.
+
+#### AppHost Orchestration (8+ Services)
+The Aspire AppHost orchestrates 8+ services simultaneously:
+- 4 instances of `Madera.Workflows` (one per dataflow: Convoso, Dispos, DirectMail, Ringba)
+- API server, Angular frontend (via `AddNpmApp` + `PublishAsDockerFile()`)
+- RabbitMQ (with management plugin and persistent data volumes), MongoDB with MongoExpress
+- Database migration runner with `WaitForCompletion()` ordering
+- ServiceDefaults project with OpenTelemetry (traces, metrics, logs), health checks (/health, /alive), HTTP resilience handlers, and service discovery
+
+#### Multi-Tenant Single-Binary Deployment
+The same `Madera.Workflows` project is deployed as 4 separate Aspire resources, each differentiated only by the `Madera__Dataflow` environment variable (an enum value). This single-binary multi-tenant pattern eliminates per-dataflow build artifacts while maintaining runtime isolation — each instance processes only its designated data source.
+
+### OpenTelemetry Custom Instrumentation
+**Branch:** `178-otel-logging`
+
+Bryan implemented custom OpenTelemetry instrumentation beyond auto-instrumentation defaults:
+- **Custom `ActivitySource`** ("Madera.Workflows") for application-specific distributed traces
+- **Custom `Meter` and `Counter<long>`** ("workflow_startup_total") using the modern `System.Diagnostics.Metrics` API
+- **Structured logging:** `AddOpenTelemetry()` with `IncludeFormattedMessage` and `IncludeScopes` for correlation
+- **Self-hosted OTLP collector** on Azure Container Apps for centralized trace/metric/log collection
+- **MassTransit log enrichment** (via `Serilog.Enrichers.MassTransit`) correlating saga IDs and message context to structured log entries — critical for debugging distributed state machine workflows
 
 ---
 
@@ -98,14 +137,18 @@ Bryan's LINSTOR-CSI contribution came directly from operating this storage infra
 
 Contributed Docker Secrets support (PR #748, merged). Maintains a personal fork for custom configuration. The server runs on the homelab Kubernetes cluster.
 
-### Don't Starve Together Server
-**Repository:** https://github.com/bryanboettcher/dst-dedicated-server (fork)
+### Don't Starve Together Server — Supervisor & Web Management
+**Repository:** https://github.com/bryanboettcher/dst-dedicated-server (fork, significantly extended)
 
-Docker-containerized DST multiplayer server with:
-- Multi-server cluster coordination
-- Automated backup/restore
-- Configuration management via YAML
-- Mod installation support
+Rewrote the container architecture from shell scripts to a Go process supervisor:
+- **Go supervisor as PID 1:** Manages DST binary lifecycle, graceful shutdown (c_save → c_shutdown → SIGKILL), stdin pipe for console commands
+- **HTTP health/management API:** Kubernetes liveness/readiness/startup probes, Prometheus metrics, save/shutdown/restart/rollback endpoints, live log streaming via SSE
+- **Web dashboard sidecar:** Multi-shard-aware management UI with live status, player tracking, log viewer, console. Reverse proxies to supervisor backends. Distroless container, ~5MB.
+- **Observer pattern:** Watches DST stdout for runtime state (port bindings, readiness signals, player events) instead of parsing config files. Drives state machine transitions.
+- **Player tracking:** In-memory map keyed by Klei User ID, maintained by join/leave event observation + periodic c_listplayers() polls with age-out
+- **Log pipe isolation:** Independent goroutines per stream, os.Stdout written first (source of truth for kubectl logs), LogBuffer second. DST's output path is never blocked by supervisor log processing.
+- **Zero external Go dependencies:** stdlib only for HTTP, A2S protocol, SSE, process management
+- **Backwards compatible:** Same clone-paste-run experience for newbies, supervisor is invisible
 
 ---
 

@@ -1,15 +1,19 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
-COPY ResumeChat.slnx .
 COPY src/ResumeChat.Api/ResumeChat.Api.csproj src/ResumeChat.Api/
 COPY src/ResumeChat.Rag/ResumeChat.Rag.csproj src/ResumeChat.Rag/
 COPY tests/ResumeChat.Api.Tests/ResumeChat.Api.Tests.csproj tests/ResumeChat.Api.Tests/
 COPY tests/ResumeChat.Rag.Tests/ResumeChat.Rag.Tests.csproj tests/ResumeChat.Rag.Tests/
-RUN dotnet restore
+RUN dotnet restore src/ResumeChat.Api/ResumeChat.Api.csproj
+RUN dotnet restore tests/ResumeChat.Api.Tests/ResumeChat.Api.Tests.csproj
+RUN dotnet restore tests/ResumeChat.Rag.Tests/ResumeChat.Rag.Tests.csproj
 
-COPY . .
-RUN dotnet test --no-restore --verbosity quiet
+COPY src/ResumeChat.Api/ src/ResumeChat.Api/
+COPY src/ResumeChat.Rag/ src/ResumeChat.Rag/
+COPY tests/ tests/
+RUN dotnet test tests/ResumeChat.Api.Tests/ --no-restore --verbosity quiet
+RUN dotnet test tests/ResumeChat.Rag.Tests/ --no-restore --verbosity quiet
 RUN dotnet publish src/ResumeChat.Api -c Release -o /app --no-restore
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime

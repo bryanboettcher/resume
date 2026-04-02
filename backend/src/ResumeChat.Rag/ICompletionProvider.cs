@@ -1,6 +1,8 @@
+using ResumeChat.Rag.Models;
+
 namespace ResumeChat.Rag;
 
 public interface ICompletionProvider
 {
-    IAsyncEnumerable<string> CompleteAsync(string prompt, CancellationToken cancellationToken = default);
+    IAsyncEnumerable<string> CompleteAsync(CompletionRequest request, CancellationToken cancellationToken = default);
 }

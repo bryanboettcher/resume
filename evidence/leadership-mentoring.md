@@ -1,7 +1,14 @@
 ---
-skill: Technical Leadership & Mentoring
-tags: [leadership, mentoring, architecture, team, code-review, legacy-modernization]
-relevance: Demonstrates progression from individual contributor to architect/lead with team management and legacy system modernization experience
+title: Technical Leadership & Mentoring
+tags: [leadership, mentoring, architecture, team-management, code-review, legacy-modernization, testing, ci-cd]
+related:
+  - projects/call-trader-madera.md
+  - projects/taylor-summit.md
+  - projects/career-history.md
+  - evidence/open-source-contributions.md
+  - evidence/dotnet-csharp-expertise.md
+category: evidence
+contact: resume@bryanboettcher.com
 ---
 
 # Technical Leadership & Mentoring — Evidence Portfolio
@@ -40,8 +47,18 @@ Sophie Walker's 1,052 commits (vs. Bryan's 426) in a system Bryan architected su
 ### Role
 Software Architect/Lead
 
-### Details
-Focus on rapid development with high maintainability using C#, .NET Core, Azure, AWS. Specific project details not publicly available, but the role title and description align with the architectural decision-making and team leadership demonstrated in other contexts.
+### Architecture Ownership
+Responsible for platform architecture across 20+ microservice projects spanning:
+- **Pharmacy management:** NCPDP binary protocol implementation, drug pedigree tracking, insurance adjudication
+- **Clinical care:** Telehealth platform with AI transcription, facial recognition, crisis escalation
+- **Mobile device management:** Full Apple MDM + Android Enterprise server with PKI infrastructure
+- **Medical device tracking:** Event-sourced MassTransit saga system with compensation patterns
+
+### Technical Leadership Evidence
+- **Co-authored internal NuGet package** (TaylorSummit-Core) — `Authors: Paul Walls, Bryan Boettcher`. Shared infrastructure library used across all 20+ projects: StartupBuilder pattern, Dapper wrappers, report conversion framework, Lamar IoC conventions
+- **Architecture evolution:** Rearchitected medical device tracking from imperative CRUD (MediatR + Dapper, 330 files) to event-sourced sagas (MassTransit + EF Core + Aspire, 126 files) — 60% code reduction with added compensation, correlation, and audit capabilities
+- **Technology adoption:** Introduced .NET Aspire 9.3.1, ONNX-based ML inference, and source generators to the platform
+- **Concurrent role management:** Held this position simultaneously with the Call-Trader Senior/Lead Engineer role, demonstrating the ability to maintain architectural coherence across two independent platforms
 
 ---
 

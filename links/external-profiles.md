@@ -1,6 +1,12 @@
 ---
-type: link-registry
-category: External Profiles & Links
+title: External Profiles & Links
+tags: [profiles, github, linkedin, stack-overflow, personal-site]
+related:
+  - links/stackoverflow.md
+  - links/github-repos.md
+  - links/github-prs.md
+category: links
+contact: resume@bryanboettcher.com
 ---
 
 # External Profiles — Link Registry

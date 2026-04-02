@@ -1,16 +1,27 @@
 ---
-project: Homelab Kubernetes Cluster
-company: Personal
-dates: 2024 – present
-role: Architect / Operator
-tags: [kubernetes, talos, linstor, argocd, gitops, docker, storage, networking]
+title: Homelab Kubernetes Cluster
+tags: [kubernetes, talos, linstor, drbd, argocd, gitops, helm, docker, storage, networking, metallb, traefik, authelia, zfs, knative, prometheus, monitoring, ai-operations]
+children:
+  - projects/homelab-infrastructure-storage.md
+  - projects/homelab-infrastructure-gitops.md
+  - projects/homelab-infrastructure-nas-ai.md
+related:
+  - evidence/infrastructure-devops.md
+  - evidence/helm-chart-engineering.md
+  - evidence/distributed-systems-architecture.md
+  - evidence/agent-first-development.md
+  - evidence/open-source-contributions.md
+  - evidence/ai-driven-development.md
+  - projects/mpc-ups-hardware.md
+  - projects/dst-dedicated-server.md
+  - projects/wyoming-rust.md
+category: project
+contact: resume@bryanboettcher.com
 ---
 
-# Homelab Infrastructure — Project Narrative
+# Homelab Infrastructure — Index
 
-## Context
-
-Bryan operates a 3-node Kubernetes cluster as personal infrastructure for home automation, media services, game servers, and development environments. The cluster is designed and operated with production-grade practices: immutable OS, GitOps deployment, replicated storage, and automated management.
+Bryan operates a 3-node Kubernetes cluster as personal infrastructure for home automation, media services, game servers, AI workloads, and development environments. This is not a toy cluster with default settings — it runs production-grade practices: immutable OS (Talos Linux), GitOps deployment (ArgoCD), block-level replicated storage (LINSTOR/DRBD), tiered snapshot backup, mTLS between storage components, and Prometheus alerting across every layer.
 
 ## Hardware
 
@@ -20,52 +31,20 @@ Bryan operates a 3-node Kubernetes cluster as personal infrastructure for home a
 | CPU | AMD Ryzen 9 7945HX (16C/32T per node, 48C/96T total) |
 | RAM | 96 GB per node (288 GB total) |
 | Performance SSD | Samsung 990 PRO 2TB per node |
-| Endurance SSD | Samsung PM953 2TB per node |
+| Endurance SSD | Samsung PM953 2TB per node (enterprise MLC) |
 | NAS | 60 TB ZFS pool |
 | Network | 2x 10GbE bonded per node |
 
-## Software Architecture
+## Services Deployed
 
-- **Talos Linux:** Immutable, API-driven Kubernetes OS. No SSH, no shell — managed entirely via `talosctl` API. Forces infrastructure-as-code practices.
-- **Piraeus/LINSTOR:** Block-level storage replication via DRBD. Synchronous replication for HA workloads.
-- **ArgoCD:** GitOps — cluster state defined in Git, ArgoCD reconciles automatically.
-- **Traefik:** Ingress controller with automatic TLS via cert-manager (Let's Encrypt).
-- **MetalLB:** Bare-metal LoadBalancer IP allocation.
-- **Authelia:** SSO/2FA authentication gateway.
+Home Assistant, Frigate (NVR with Coral TPU object detection), Mosquitto MQTT, Plex, Sonarr, Radarr, Lidarr, Bazarr, Prowlarr, SABnzbd, Overseerr, Tautulli, Nextcloud, Qdrant (vector database), resume-chat, Homarr (dashboard), Valheim, Don't Starve Together, Sunshine (game streaming), Authelia (SSO/2FA), Traefik (ingress), cert-manager, MetalLB, ArgoCD, KubeVirt, WireGuard, Kubernetes Dashboard.
 
-## Storage Architecture
+## Child Documents
 
-Four tiers designed for different workload characteristics:
+- **[Storage Architecture](homelab-infrastructure-storage.md)** — Talos Linux immutable OS with LINSTOR/DRBD adaptations (systemd patches, LVM path redirects, pre-compiled DRBD modules). Four-tier hardware selection (performance 3-way DRBD, endurance 1-way, general-ha NFS/ZFS, local-path ephemeral). DRBD Protocol A tuning for 10GbE (10MB buffers, 16K maxBuffers/epochSize, congestionFill, TRIM resync). Dual LVM/ZFS backends with rolling migration support. Two-layer snapshot system: local LINSTOR rollback + oxidize rsync to NAS. 13 PrometheusRules for LINSTOR and DRBD health. Helm-generated mTLS PKI. Open source LINSTOR-CSI bug fix.
 
-| Tier | Use Case | Hardware | Why |
-|------|----------|----------|-----|
-| `local-path` | Ephemeral scratch | OS drive | No replication needed for throwaway data |
-| `endurance` | Write-heavy (Frigate NVR, downloads) | PM953 enterprise MLC | Enterprise endurance rating for sustained writes |
-| `performance` | Critical HA (databases, games) | 990 PRO | Fast consumer SSD with LINSTOR replication |
-| `general-ha` | Configs, media staging | NFS from ZFS NAS | Bulk storage with ZFS redundancy |
+- **[GitOps with ArgoCD and Custom Helm Charts](homelab-infrastructure-gitops.md)** — Namespace pre-creation ApplicationSet (sync-wave -50) with Pod Security Standards by namespace. Four domain-specific ApplicationSets (apps, home, games, pvr) with Go templates, self-heal, and `ignoreDifferences` for StatefulSet mutations. Reusable `arr-app` base chart for 9 PVR applications reducing each to ~20 lines of configuration. Ollama dual-mode chart (standard Deployment or Knative scale-to-zero) with GPU type detection and `deepCopy`/`mergeOverwrite`. Data restore Jobs chart with three backup access methods and security-hardened containers.
 
-## Open Source Contribution
+- **[NAS Management and AI-Driven Operations](homelab-infrastructure-nas-ai.md)** — NAS docker-compose with always-running exporters and scheduler-driven backup chain (`service_completed_successfully` dependency ordering). Prometheus alerts covering disk health (SMART), Btrfs integrity, backup freshness, and drive power management. Three-agent AI operations model: homelab-manager (planning), platform-qa (validation), platform-executor (execution) with per-command timeout, risk level, and rollback commands.
 
-Operating this cluster directly led to the LINSTOR-CSI bug fix (PR #411). Bryan's storage topology (dedicated storage-only satellite nodes) exposed a deadlock that simpler configurations wouldn't encounter. The bug was discovered, diagnosed, and fixed through actual production operations.
-
-## AI-Driven Operations
-
-The cluster is managed through specialized AI agents:
-- Investigation and state analysis via homelab-manager
-- Kubernetes operations via platform-executor
-- GitOps commits via git-workflow-manager
-- Deployment lifecycle via deployment-manager
-
-This is documented in Bryan's CLAUDE.md: "prefer subagent delegation over direct Bash/tool use for complex operations."
-
-## Services
-
-Home Assistant, Frigate (NVR with object detection), Plex, Sonarr, Radarr, Lidarr, Prowlarr, SABnzbd, Overseerr, game servers (DST, Valheim), Authelia, Traefik, cert-manager, MetalLB, ArgoCD.
-
-## Significance for Resume
-
-- Production Kubernetes operations (not just "I deployed to k8s once")
-- Storage architecture design with hardware-aware tier selection
-- GitOps practices with ArgoCD
-- Infrastructure debugging that led to upstream open source contributions
-- AI-driven operations management
+---

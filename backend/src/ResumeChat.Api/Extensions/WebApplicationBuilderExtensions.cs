@@ -1,5 +1,11 @@
 using ResumeChat.Api.Options;
 using ResumeChat.Rag;
+using ResumeChat.Rag.Chunking;
+using ResumeChat.Rag.Completion;
+using ResumeChat.Rag.Embedding;
+using ResumeChat.Rag.Ingestion;
+using ResumeChat.Rag.Retrieval;
+using ResumeChat.Rag.VectorStore;
 
 namespace ResumeChat.Api.Extensions;
 
@@ -13,9 +19,68 @@ public static class WebApplicationBuilderExtensions
             .ValidateOnStart();
 
         builder.Services.AddResumeChatRateLimiting(builder.Configuration);
-
-        builder.Services.AddSingleton<ICompletionProvider, HardcodedCompletionProvider>();
+        builder.AddRagServices();
 
         return builder;
+    }
+
+    private static void AddRagServices(this WebApplicationBuilder builder)
+    {
+        // Embedding (Ollama)
+        builder.Services.AddOptions<OllamaEmbeddingOptions>()
+            .BindConfiguration(OllamaEmbeddingOptions.SectionName)
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        builder.Services.AddHttpClient<IEmbeddingProvider, OllamaEmbeddingProvider>();
+
+        // Vector store (Qdrant)
+        builder.Services.AddOptions<QdrantOptions>()
+            .BindConfiguration(QdrantOptions.SectionName)
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        builder.Services.AddHttpClient<IVectorStore, QdrantVectorStore>();
+
+        // Corpus config
+        builder.Services.AddOptions<Api.Options.CorpusOptions>()
+            .BindConfiguration(Api.Options.CorpusOptions.SectionName)
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        // Chunking
+        builder.Services.AddSingleton<IChunkingStrategy, MarkdownSectionChunkingStrategy>();
+
+        // Ingestion
+        builder.Services.AddTransient<IIngestionPipeline, CorpusIngestionPipeline>();
+        builder.Services.AddTransient<IngestionService>();
+
+        // Retrieval
+        builder.Services.AddTransient<IRetrievalProvider, VectorRetrievalProvider>();
+
+        // Completion — select provider based on configuration
+        var completionProvider = builder.Configuration["Completion:Provider"];
+        switch (completionProvider)
+        {
+            case "Claude":
+                builder.Services.AddOptions<ClaudeCompletionOptions>()
+                    .BindConfiguration(ClaudeCompletionOptions.SectionName)
+                    .ValidateDataAnnotations()
+                    .ValidateOnStart();
+                builder.Services.AddHttpClient<ICompletionProvider, ClaudeCompletionProvider>();
+                break;
+
+            case "Ollama":
+                builder.Services.AddOptions<OllamaCompletionOptions>()
+                    .BindConfiguration(OllamaCompletionOptions.SectionName)
+                    .ValidateDataAnnotations()
+                    .ValidateOnStart();
+                builder.Services.AddHttpClient<ICompletionProvider, OllamaCompletionProvider>();
+                break;
+
+            default:
+                builder.Services.AddSingleton<ICompletionProvider, HardcodedCompletionProvider>();
+                break;
+        }
     }
 }

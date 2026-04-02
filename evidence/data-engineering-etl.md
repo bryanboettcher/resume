@@ -1,7 +1,16 @@
 ---
-skill: Data Engineering & ETL Pipelines
-tags: [ETL, data-processing, CSV, address-normalization, deduplication, bulk-operations, SQL, pipeline]
-relevance: Demonstrates high-volume data processing expertise with real production systems handling tens of millions of records
+title: Data Engineering & ETL Pipelines
+tags: [etl, data-processing, csv, address-normalization, deduplication, sql-server, sqlbulkcopy, dapper, ef-core, pipeline, crc64, lob-api]
+related:
+  - evidence/etl-pipeline-framework.md
+  - evidence/performance-optimization.md
+  - projects/call-trader-madera.md
+  - projects/fastaddress-research.md
+  - evidence/distributed-systems-architecture.md
+  - evidence/dotnet-csharp-expertise.md
+  - links/stackoverflow.md
+category: evidence
+contact: resume@bryanboettcher.com
 ---
 
 # Data Engineering & ETL Pipelines — Evidence Portfolio
@@ -136,6 +145,15 @@ The benchmark answer comparing HashSet vs. sorted array for large-scale lookups 
 - **SqlBulkCopy** for high-throughput batch inserts
 - **Dapper** for performance-critical queries (avoiding EF Core overhead on hot paths)
 - **Entity Framework Core** for CRUD operations where ORM convenience outweighs performance needs
+
+### Incremental ORM Migration Strategy (Dapper → EF Core)
+**Branch:** `efcore3-toyko-drift`
+
+Rather than a risky big-bang ORM migration, Bryan designed a gradual transition strategy:
+- **Dual-access consumer pattern:** Consumers inject *both* `IConnectionProvider` (Dapper) and `DirectMailDbContext` (EF Core). Complex report queries remain as stored procedures via Dapper while CRUD operations for reference entities (Publishers, Brokers, Creatives, Verticals, ZipCodeLists) migrate to EF Core with `ExecuteDeleteAsync` and snapshot isolation transactions.
+- **SagaDbContext extension:** `DirectMailDbContext` extends MassTransit's `SagaDbContext`, so saga state and domain entities share a single context with fluent model configuration. This cohabitation pattern avoids the overhead of multiple DbContexts while preserving MassTransit saga persistence.
+- **Generic paginated service base:** `EfCorePaginatedServiceBase<TModel, TQuery>` with individual services (e.g., `EfCoreBrokerService`) overriding `BuildQuery()` to return `IQueryable<T>` projections. Clean decomposition from the prior monolithic `SqlQueryServices.cs` (189 lines deleted, replaced by 6 focused service files).
+- **Obsolete markers for migration discipline:** Internal concrete implementations of contract interfaces (e.g., `InlinePublisherModel : PublisherModel`) marked `[Obsolete]` to prevent user-code usage during the transition period.
 
 ### Career History
 - Multiple roles involving MSSQL (listed as primary skill on resume)

@@ -1,7 +1,18 @@
 ---
-skill: Distributed Systems & Event-Driven Architecture
-tags: [MassTransit, sagas, state-machines, DDD, event-driven, messaging, RabbitMQ, microservices]
-relevance: Demonstrates deep expertise in message-driven distributed systems with real production implementations and open source framework contributions
+title: Distributed Systems & Event-Driven Architecture
+tags: [masstransit, sagas, state-machines, ddd, event-driven, rabbitmq, microservices, kubernetes, cqrs, saga-orchestration]
+related:
+  - projects/call-trader-madera.md
+  - projects/kbstore-ecommerce.md
+  - projects/homelab-infrastructure.md
+  - projects/taylor-summit.md
+  - evidence/open-source-contributions.md
+  - evidence/dotnet-csharp-expertise.md
+  - evidence/data-engineering-etl.md
+  - evidence/infrastructure-devops.md
+  - links/github-prs.md
+category: evidence
+contact: resume@bryanboettcher.com
 ---
 
 # Distributed Systems & Event-Driven Architecture — Evidence Portfolio
@@ -72,15 +83,23 @@ A distributed e-commerce platform built with Domain-Driven Design and event-driv
 **Repository:** github.com/Call-Trader/madera-apps (private)
 **Local path:** ~/src/bryanboettcher/madera-apps/
 
-### Import State Machine
-Orchestrates the full lifecycle of a direct mail data import:
+### The Transformation: Monolithic Loop → Observable Pipeline
+The system Bryan replaced was a single `foreach` loop over a CSV file — if any row failed, the entire import failed with no recovery path. No visibility into progress, no ability to retry from mid-point, no way to understand what went wrong without reading logs after the fact.
+
+Bryan decomposed this into a saga state machine where each processing stage is an independent, observable step:
 ```
 Upload → Stage → MatchAddresses → NormalizeAddresses → MigrateData → Complete
 ```
-- Each transition is a discrete, independently retriable step
-- Fault handling at every stage with compensating actions
-- State is persisted via saga repository (surviving process restarts)
-- Processes 50K–500K records per import through this pipeline
+
+The architectural payoff:
+- **Mid-process visibility:** Operators can see exactly which stage an import is in, how many records have been processed, and what's pending — while it's running
+- **Partial failure recovery:** If address normalization fails on row 40,000 of 50,000, the system retries from that stage with the 10,000 remaining rows — not from scratch
+- **Repairability:** A failed stage can be manually re-triggered after fixing the underlying issue (bad data, API timeout, schema mismatch) without re-uploading or re-processing earlier stages
+- **Independent retriability:** Each transition is a discrete step with fault handling and compensating actions
+- **State persistence:** Saga state survives process restarts — an import that was mid-normalization when the server restarted picks up where it left off
+- **Auditability:** Every state transition is a message, creating an implicit audit trail of what happened, when, and in what order
+
+This pattern was then replicated across all four data source pipelines (DirectMail, Convoso, Ringba, Dispos), and the same observability/repairability principles were applied to the MailFile generation workflow. The investment in saga decomposition meant that subsequent features like import reporting, progress dashboards, and error remediation UIs were trivial to build — the data was already there in the saga state.
 
 ### Mail File State Machine
 Orchestrates mail file generation with bidirectional transitions:
@@ -95,6 +114,38 @@ Kneading (configure) → Shaking (populate) → Baking (generate) → Complete
 - **MassTransit over Wolverine:** Explicit architectural decision documented in project history. Bryan chose MassTransit for its mature saga support and explicit state machine modeling despite Wolverine's simpler API.
 - **Custom MassTransit.DapperIntegration:** Built a local library for Dapper-based saga persistence, motivated by performance requirements that EF Core couldn't meet. This directly led to the upstream MassTransit PRs.
 - **RabbitMQ transport:** Chosen for reliability and operational familiarity; later architecture documents discuss potential migration to MessagePipe for in-process pub/sub in a modular monolith configuration.
+
+---
+
+## Evidence: Saga Entity Deduplication & Cross-Aggregate Choreography
+
+**Repository:** github.com/Call-Trader/madera-apps (private)
+**Branch:** `do-not-run` (architectural prototype)
+
+### Address State Machine — Hash-Based Entity Deduplication
+Bryan designed an `AddressStateMachine` (173 lines) implementing a saga-based entity deduplication pattern rarely seen in MassTransit implementations:
+
+- **Hash-based correlation:** `CorrelateBy(x => x.AddressHash)` uses CRC64 hashes instead of GUIDs for saga correlation, enabling automatic detection of duplicate address submissions across independent import batches
+- **Merge pattern:** When a duplicate address arrives, the saga publishes an `AddressMergedEvent` containing the canonical entity reference, then finalizes the duplicate — rather than rejecting it or silently dropping it
+- **Read-only events:** Validation queries use events that don't create saga instances (`OnMissingInstance` returns typed failure responses rather than faulting)
+
+### Cross-Aggregate Saga Choreography
+The Recipient and Address domains maintain eventual consistency through saga-to-saga messaging:
+
+```
+RecipientStateMachine → publishes EnsureAddressCommand
+    → AddressStateMachine receives, creates/merges address
+        → publishes AddressVerifiedEvent / AddressMergedEvent
+            → RecipientStateMachine reacts, links to canonical address
+```
+
+This is genuine distributed systems choreography — two independent state machines coordinating across aggregate boundaries without synchronous coupling. Each saga owns its lifecycle, communicates only through messages, and handles the case where the other aggregate may not yet exist.
+
+### Domain-Driven Bounded Context Restructuring
+Restructured flat consumer/saga folders into proper bounded contexts: `Domains/{Addresses, Brokers, Creatives, Imports, MailFiles, MailHouses, Publishers, Recipients, Verticals}`. Each domain contains its own state machines, consumers, and persistence — enforcing domain isolation at the folder level.
+
+### BDD Test Coverage at Scale
+The `Address_Tests.cs` file spans 1,153 lines with 26 nested test classes following `When_X / When_Y` BDD patterns. This provides exhaustive behavioral coverage of a single state machine: create/update/delete/validate/ensure operations, each with exists/not-exists scenarios and merge scenarios. The MassTransitTestBase infrastructure includes `ISystemClock` mocking for deterministic time-based saga testing.
 
 ---
 

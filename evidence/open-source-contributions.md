@@ -1,7 +1,16 @@
 ---
-skill: Open Source Contributions & Community Engagement
-tags: [open-source, collaboration, code-review, upstream, community, Stack Overflow]
-relevance: Demonstrates ability to work with external maintainers, contribute to unfamiliar codebases, and communicate technical ideas clearly in public forums
+title: Open Source Contributions & Community Engagement
+tags: [open-source, code-review, upstream-contributions, stack-overflow, masstransit, lamar, kubernetes, go, csharp, community]
+related:
+  - evidence/distributed-systems-architecture.md
+  - evidence/dotnet-csharp-expertise.md
+  - evidence/ai-driven-development.md
+  - evidence/infrastructure-devops.md
+  - projects/homelab-infrastructure.md
+  - links/github-prs.md
+  - links/stackoverflow.md
+category: evidence
+contact: resume@bryanboettcher.com
 ---
 
 # Open Source Contributions — Evidence Portfolio
