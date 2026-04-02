@@ -103,7 +103,7 @@ public static class WebApplicationBuilderExtensions
                     .BindConfiguration(ClaudeCompletionOptions.SectionName)
                     .ValidateDataAnnotations()
                     .ValidateOnStart();
-                builder.Services.AddHttpClient<ICompletionProvider, ClaudeCompletionProvider>();
+                builder.Services.AddSingleton<ICompletionProvider, ClaudeCompletionProvider>();
                 break;
 
             case "Ollama":

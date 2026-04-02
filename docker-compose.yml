@@ -1,4 +1,12 @@
 services:
+  aspire-dashboard:
+    image: mcr.microsoft.com/dotnet/aspire-dashboard:9.2
+    ports:
+      - "18888:18888"
+      - "18889:18889"
+    environment:
+      DOTNET_DASHBOARD_UNSECURED_ALLOW_ANONYMOUS: "true"
+
   qdrant:
     image: qdrant/qdrant:latest
     ports:
@@ -20,7 +28,11 @@ services:
       Ollama__Completion__Model: qwen2.5-coder:7b
       Qdrant__BaseUrl: http://qdrant:6333
       Qdrant__CollectionName: resume-chunks
-      Completion__Provider: Ollama
+      Completion__Provider: ${COMPLETION_PROVIDER:-Ollama}
+      Claude__ApiKey: ${CLAUDE_API_KEY:-}
+      Claude__Model: ${CLAUDE_MODEL:-claude-sonnet-4-20250514}
+      Security__Canary: local-dev-canary-token
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://aspire-dashboard:18889
       Corpus__Directory: /app/corpus
     volumes:
       - ./evidence:/app/corpus/evidence:ro
@@ -30,6 +42,7 @@ services:
       - "host.docker.internal:host-gateway"
     depends_on:
       - qdrant
+      - aspire-dashboard
 
   frontend:
     image: caddy:2-alpine

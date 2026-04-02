@@ -2,6 +2,7 @@ using System.Runtime.CompilerServices;
 using ResumeChat.Api.Validation;
 using ResumeChat.Rag;
 using ResumeChat.Rag.Classification;
+using ResumeChat.Rag.Completion;
 using ResumeChat.Rag.Models;
 using ResumeChat.Rag.Retrieval;
 
@@ -23,7 +24,15 @@ public static class ChatEndpoints
             .Produces(StatusCodes.Status429TooManyRequests);
     }
 
-    private static IResult HandleHealth() => Results.Ok(new { status = "healthy" });
+    private static IResult HandleHealth(ICompletionProvider completion)
+    {
+        var response = new { status = "healthy", provider = (string?)null, model = (string?)null };
+
+        if (completion is ICompletionMetadata meta)
+            response = new { status = "healthy", provider = (string?)meta.Provider, model = (string?)meta.Model };
+
+        return Results.Ok(response);
+    }
 
     private static async Task<IResult> HandleChat(
         ChatRequest request,
@@ -38,7 +47,8 @@ public static class ChatEndpoints
         RagDiagnostics.ChatRequests.Add(1);
 
         activity?.SetTag("chat.message_length", request.Message.Length);
-        logger.LogInformation("Chat request received ({MessageLength} chars)", request.Message.Length);
+        activity?.SetTag("chat.user_message", request.Message);
+        logger.LogInformation("Chat request: {UserMessage}", request.Message);
 
         try
         {
@@ -60,12 +70,23 @@ public static class ChatEndpoints
             {
                 context.Response.ContentType = "text/event-stream";
 
+                var responseBuilder = new System.Text.StringBuilder();
                 await foreach (var chunk in chunks.ConfigureAwait(false))
                 {
+                    responseBuilder.Append(chunk);
                     var escaped = chunk.Replace("\n", "\ndata: ");
                     await context.Response.WriteAsync($"data: {escaped}\n\n", ct).ConfigureAwait(false);
                     await context.Response.Body.FlushAsync(ct).ConfigureAwait(false);
                 }
+
+                var fullResponse = responseBuilder.ToString();
+                activity?.SetTag("chat.response_length", fullResponse.Length);
+                activity?.SetTag("chat.response_preview", fullResponse.Length > 500
+                    ? fullResponse[..500] + "..."
+                    : fullResponse);
+                logger.LogInformation("Chat response ({ResponseLength} chars): {ResponsePreview}",
+                    fullResponse.Length,
+                    fullResponse.Length > 200 ? fullResponse[..200] + "..." : fullResponse);
 
                 await context.Response.WriteAsync("data: [DONE]\n\n", ct).ConfigureAwait(false);
                 await context.Response.Body.FlushAsync(ct).ConfigureAwait(false);

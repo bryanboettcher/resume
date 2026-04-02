@@ -6,6 +6,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using OpenTelemetry;
 using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 
 namespace Microsoft.Extensions.Hosting;
@@ -35,6 +36,11 @@ public static class ServiceDefaultsExtensions
         });
 
         builder.Services.AddOpenTelemetry()
+            .ConfigureResource(resource => resource
+                .AddService(
+                    serviceName: builder.Environment.ApplicationName,
+                    serviceVersion: typeof(ServiceDefaultsExtensions).Assembly
+                        .GetName().Version?.ToString() ?? "0.0.0"))
             .WithMetrics(metrics =>
             {
                 metrics

@@ -9,41 +9,40 @@ using ResumeChat.Rag.Models;
 
 namespace ResumeChat.Rag.Completion;
 
-public sealed class OllamaCompletionProvider : ICompletionProvider
+public sealed class OllamaCompletionProvider : CompletionProviderBase
 {
     private readonly HttpClient _httpClient;
     private readonly OllamaCompletionOptions _options;
-    private readonly CompletionSecurityOptions _security;
-    private readonly ILogger<OllamaCompletionProvider> _logger;
 
     public OllamaCompletionProvider(
         HttpClient httpClient,
         IOptions<OllamaCompletionOptions> options,
         IOptions<CompletionSecurityOptions> security,
         ILogger<OllamaCompletionProvider> logger)
+        : base(security.Value, logger)
     {
         _httpClient = httpClient;
         _options = options.Value;
-        _security = security.Value;
-        _logger = logger;
     }
 
-    public async IAsyncEnumerable<string> CompleteAsync(
+    protected override string ProviderName => "Ollama";
+    protected override string ModelName => _options.Model;
+
+    protected override async IAsyncEnumerable<string> StreamTokensAsync(
+        string systemPrompt,
         CompletionRequest request,
-        [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         using var activity = RagDiagnostics.ActivitySource.StartActivity("rag.complete");
         activity?.SetTag("rag.complete.model", _options.Model);
-        activity?.SetTag("rag.complete.provider", "Ollama");
+        activity?.SetTag("rag.complete.provider", ProviderName);
         activity?.SetTag("rag.complete.context_chunks", request.Context.Count);
 
         var totalStart = Stopwatch.GetTimestamp();
         var firstTokenRecorded = false;
 
-        _logger.LogInformation("Starting Ollama completion with model {Model} ({ContextChunks} context chunks)",
+        Logger.LogInformation("Starting Ollama completion with model {Model} ({ContextChunks} context chunks)",
             _options.Model, request.Context.Count);
-
-        var systemPrompt = SystemPromptBuilder.Build(request, _security.Canary);
 
         var body = new
         {
@@ -95,7 +94,7 @@ public sealed class OllamaCompletionProvider : ICompletionProvider
 
         var totalMs = Stopwatch.GetElapsedTime(totalStart).TotalMilliseconds;
         RagDiagnostics.CompletionTotalDuration.Record(totalMs);
-        _logger.LogInformation("Ollama completion finished in {ElapsedMs:F1}ms", totalMs);
+        Logger.LogInformation("Ollama completion finished in {ElapsedMs:F1}ms", totalMs);
     }
 
     private sealed record OllamaChatChunk(

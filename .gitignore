@@ -9,6 +9,7 @@ backend/**/*.user
 *.swp
 
 ## Secrets
+.env
 appsettings.*.json
 !appsettings.json
 !appsettings.Development.json

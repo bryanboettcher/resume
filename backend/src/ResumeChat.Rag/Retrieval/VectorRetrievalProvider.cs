@@ -47,6 +47,12 @@ public sealed class VectorRetrievalProvider : IRetrievalProvider
         _logger.LogInformation("Retrieved {ResultCount} chunks for query ({QueryLength} chars) in {ElapsedMs:F1}ms",
             results.Count, query.Length, elapsedMs);
 
+        foreach (var scored in results)
+        {
+            _logger.LogInformation("  [{Score:F4}] {Source} — {Section}",
+                scored.Score, scored.Chunk.Metadata.SourceFile, scored.Chunk.SectionHeading);
+        }
+
         return results;
     }
 }
