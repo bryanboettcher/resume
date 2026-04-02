@@ -31,34 +31,52 @@ public static class ChatEndpoints
         IRetrievalProvider retrieval,
         ICompletionProvider completion,
         HttpContext context,
+        ILogger<ChatRequest> logger,
         CancellationToken ct)
     {
-        var threat = await classifier.ClassifyAsync(request.Message, ct).ConfigureAwait(false);
+        using var activity = RagDiagnostics.ActivitySource.StartActivity("chat.request");
+        RagDiagnostics.ChatRequests.Add(1);
 
-        context.Response.Headers["X-Threat-Score"] = threat.ThreatScore.ToString();
+        activity?.SetTag("chat.message_length", request.Message.Length);
+        logger.LogInformation("Chat request received ({MessageLength} chars)", request.Message.Length);
 
-        if (threat.IsThreat)
-            return await StreamSse(SingleChunk(ChatResponses.Unrelated, ct));
-
-        var relevantContext = await retrieval.RetrieveAsync(request.Message, topK: 5, ct).ConfigureAwait(false);
-        var completionRequest = new CompletionRequest(request.Message, relevantContext);
-
-        return await StreamSse(completion.CompleteAsync(completionRequest, ct));
-
-        async Task<IResult> StreamSse(IAsyncEnumerable<string> chunks)
+        try
         {
-            context.Response.ContentType = "text/event-stream";
+            var threat = await classifier.ClassifyAsync(request.Message, ct).ConfigureAwait(false);
 
-            await foreach (var chunk in chunks.ConfigureAwait(false))
+            context.Response.Headers["X-Threat-Score"] = threat.ThreatScore.ToString();
+
+            if (threat.IsThreat)
+                return await StreamSse(SingleChunk(ChatResponses.Unrelated, ct));
+
+            var relevantContext = await retrieval.RetrieveAsync(request.Message, topK: 5, ct).ConfigureAwait(false);
+            var completionRequest = new CompletionRequest(request.Message, relevantContext);
+
+            activity?.SetTag("chat.context_count", relevantContext.Count);
+
+            return await StreamSse(completion.CompleteAsync(completionRequest, ct));
+
+            async Task<IResult> StreamSse(IAsyncEnumerable<string> chunks)
             {
-                var escaped = chunk.Replace("\n", "\ndata: ");
-                await context.Response.WriteAsync($"data: {escaped}\n\n", ct).ConfigureAwait(false);
-                await context.Response.Body.FlushAsync(ct).ConfigureAwait(false);
-            }
+                context.Response.ContentType = "text/event-stream";
 
-            await context.Response.WriteAsync("data: [DONE]\n\n", ct).ConfigureAwait(false);
-            await context.Response.Body.FlushAsync(ct).ConfigureAwait(false);
-            return Results.Empty;
+                await foreach (var chunk in chunks.ConfigureAwait(false))
+                {
+                    var escaped = chunk.Replace("\n", "\ndata: ");
+                    await context.Response.WriteAsync($"data: {escaped}\n\n", ct).ConfigureAwait(false);
+                    await context.Response.Body.FlushAsync(ct).ConfigureAwait(false);
+                }
+
+                await context.Response.WriteAsync("data: [DONE]\n\n", ct).ConfigureAwait(false);
+                await context.Response.Body.FlushAsync(ct).ConfigureAwait(false);
+                return Results.Empty;
+            }
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            RagDiagnostics.ChatErrors.Add(1);
+            activity?.SetStatus(System.Diagnostics.ActivityStatusCode.Error, ex.Message);
+            throw;
         }
     }
 

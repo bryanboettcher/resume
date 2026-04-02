@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using Microsoft.Extensions.Logging;
 using ResumeChat.Rag.Embedding;
 using ResumeChat.Rag.VectorStore;
 
@@ -11,45 +12,67 @@ public sealed class IngestionService
     private readonly IIngestionPipeline _pipeline;
     private readonly IVectorStore _vectorStore;
     private readonly IEmbeddingProvider _embedder;
+    private readonly ILogger<IngestionService> _logger;
 
-    public IngestionService(IIngestionPipeline pipeline, IVectorStore vectorStore, IEmbeddingProvider embedder)
+    public IngestionService(
+        IIngestionPipeline pipeline,
+        IVectorStore vectorStore,
+        IEmbeddingProvider embedder,
+        ILogger<IngestionService> logger)
     {
         _pipeline = pipeline;
         _vectorStore = vectorStore;
         _embedder = embedder;
+        _logger = logger;
     }
 
     public async IAsyncEnumerable<IngestionProgress> IngestCorpusAsync(
         string corpusDirectory,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        yield return new IngestionProgress("Detecting embedding dimensions", 0);
+        using var activity = RagDiagnostics.ActivitySource.StartActivity("rag.ingest");
+        activity?.SetTag("rag.ingest.corpus_directory", corpusDirectory);
+        RagDiagnostics.IngestionInProgress.Add(1);
 
-        var probe = await _embedder.EmbedAsync("probe", cancellationToken).ConfigureAwait(false);
-        var vectorSize = probe.Length;
-
-        yield return new IngestionProgress($"Ensuring Qdrant collection (vector size: {vectorSize})", 0);
-
-        await _vectorStore.EnsureCollectionAsync(vectorSize, cancellationToken).ConfigureAwait(false);
-
-        yield return new IngestionProgress("Starting ingestion", 0);
-
-        var count = 0;
-        string? lastFile = null;
-
-        await foreach (var embedded in _pipeline.IngestAsync(corpusDirectory, cancellationToken).ConfigureAwait(false))
+        try
         {
-            await _vectorStore.UpsertAsync(embedded, cancellationToken).ConfigureAwait(false);
-            count++;
+            yield return new IngestionProgress("Detecting embedding dimensions", 0);
 
-            var currentFile = embedded.Chunk.Metadata.SourceFile;
-            if (currentFile != lastFile)
+            var probe = await _embedder.EmbedAsync("probe", cancellationToken).ConfigureAwait(false);
+            var vectorSize = probe.Length;
+
+            _logger.LogInformation("Embedding dimensions: {VectorSize}", vectorSize);
+            yield return new IngestionProgress($"Ensuring Qdrant collection (vector size: {vectorSize})", 0);
+
+            await _vectorStore.EnsureCollectionAsync(vectorSize, cancellationToken).ConfigureAwait(false);
+
+            yield return new IngestionProgress("Starting ingestion", 0);
+
+            var count = 0;
+            string? lastFile = null;
+
+            await foreach (var embedded in _pipeline.IngestAsync(corpusDirectory, cancellationToken)
+                               .ConfigureAwait(false))
             {
-                yield return new IngestionProgress($"Processing {currentFile}", count);
-                lastFile = currentFile;
-            }
-        }
+                await _vectorStore.UpsertAsync(embedded, cancellationToken).ConfigureAwait(false);
+                count++;
+                RagDiagnostics.IngestionChunks.Add(1);
 
-        yield return new IngestionProgress("Ingestion complete", count);
+                var currentFile = embedded.Chunk.Metadata.SourceFile;
+                if (currentFile != lastFile)
+                {
+                    yield return new IngestionProgress($"Processing {currentFile}", count);
+                    lastFile = currentFile;
+                }
+            }
+
+            activity?.SetTag("rag.ingest.total_chunks", count);
+            _logger.LogInformation("Ingestion complete: {TotalChunks} chunks upserted", count);
+            yield return new IngestionProgress("Ingestion complete", count);
+        }
+        finally
+        {
+            RagDiagnostics.IngestionInProgress.Add(-1);
+        }
     }
 }

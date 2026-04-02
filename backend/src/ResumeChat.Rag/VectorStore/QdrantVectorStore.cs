@@ -1,8 +1,10 @@
+using System.Diagnostics;
 using System.Net.Http.Json;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using ResumeChat.Rag.Models;
 
@@ -12,11 +14,16 @@ public sealed class QdrantVectorStore : IVectorStore
 {
     private readonly HttpClient _httpClient;
     private readonly QdrantOptions _options;
+    private readonly ILogger<QdrantVectorStore> _logger;
 
-    public QdrantVectorStore(HttpClient httpClient, IOptions<QdrantOptions> options)
+    public QdrantVectorStore(
+        HttpClient httpClient,
+        IOptions<QdrantOptions> options,
+        ILogger<QdrantVectorStore> logger)
     {
         _httpClient = httpClient;
         _options = options.Value;
+        _logger = logger;
     }
 
     public async Task EnsureCollectionAsync(int vectorSize, CancellationToken cancellationToken = default)
@@ -25,7 +32,13 @@ public sealed class QdrantVectorStore : IVectorStore
 
         var check = await _httpClient.GetAsync(url, cancellationToken).ConfigureAwait(false);
         if (check.IsSuccessStatusCode)
+        {
+            _logger.LogDebug("Collection {Collection} already exists", _options.CollectionName);
             return;
+        }
+
+        _logger.LogInformation("Creating collection {Collection} with vector size {VectorSize}",
+            _options.CollectionName, vectorSize);
 
         var body = new
         {
@@ -75,6 +88,11 @@ public sealed class QdrantVectorStore : IVectorStore
         int topK,
         CancellationToken cancellationToken = default)
     {
+        using var activity = RagDiagnostics.ActivitySource.StartActivity("rag.vector_search");
+        activity?.SetTag("rag.search.top_k", topK);
+
+        var startTimestamp = Stopwatch.GetTimestamp();
+
         var body = new
         {
             vector = queryEmbedding.ToArray(),
@@ -90,7 +108,19 @@ public sealed class QdrantVectorStore : IVectorStore
             .ConfigureAwait(false);
 
         if (result?.Result is null)
+        {
+            _logger.LogWarning("Qdrant search returned null result for top_k={TopK}", topK);
+            RagDiagnostics.VectorSearchDuration.Record(Stopwatch.GetElapsedTime(startTimestamp).TotalMilliseconds);
             return [];
+        }
+
+        var elapsedMs = Stopwatch.GetElapsedTime(startTimestamp).TotalMilliseconds;
+        activity?.SetTag("rag.search.result_count", result.Result.Count);
+        activity?.SetTag("rag.search.top_score", result.Result.Count > 0 ? result.Result[0].Score : 0);
+        RagDiagnostics.VectorSearchDuration.Record(elapsedMs);
+
+        _logger.LogDebug("Qdrant search returned {ResultCount} results in {ElapsedMs:F1}ms (top score: {TopScore:F4})",
+            result.Result.Count, elapsedMs, result.Result.Count > 0 ? result.Result[0].Score : 0);
 
         return result.Result.Select(r =>
         {

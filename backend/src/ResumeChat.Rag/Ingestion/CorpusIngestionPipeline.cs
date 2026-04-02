@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using Microsoft.Extensions.Logging;
 using ResumeChat.Rag.Chunking;
 using ResumeChat.Rag.Embedding;
 using ResumeChat.Rag.Models;
@@ -9,11 +10,16 @@ public sealed class CorpusIngestionPipeline : IIngestionPipeline
 {
     private readonly IChunkingStrategy _chunker;
     private readonly IEmbeddingProvider _embedder;
+    private readonly ILogger<CorpusIngestionPipeline> _logger;
 
-    public CorpusIngestionPipeline(IChunkingStrategy chunker, IEmbeddingProvider embedder)
+    public CorpusIngestionPipeline(
+        IChunkingStrategy chunker,
+        IEmbeddingProvider embedder,
+        ILogger<CorpusIngestionPipeline> logger)
     {
         _chunker = chunker;
         _embedder = embedder;
+        _logger = logger;
     }
 
     public async IAsyncEnumerable<EmbeddedChunk> IngestAsync(
@@ -26,10 +32,16 @@ public sealed class CorpusIngestionPipeline : IIngestionPipeline
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var content = await File.ReadAllTextAsync(filePath, cancellationToken).ConfigureAwait(false);
+            using var fileActivity = RagDiagnostics.ActivitySource.StartActivity("rag.ingest.file");
             var relativePath = Path.GetRelativePath(directory, filePath);
+            fileActivity?.SetTag("rag.ingest.file_path", relativePath);
+
+            var content = await File.ReadAllTextAsync(filePath, cancellationToken).ConfigureAwait(false);
             var metadata = BuildMetadata(content, relativePath);
             var chunks = _chunker.Chunk(content, metadata);
+
+            fileActivity?.SetTag("rag.ingest.chunk_count", chunks.Count);
+            _logger.LogDebug("Processing {FilePath}: {ChunkCount} chunks", relativePath, chunks.Count);
 
             foreach (var chunk in chunks)
             {

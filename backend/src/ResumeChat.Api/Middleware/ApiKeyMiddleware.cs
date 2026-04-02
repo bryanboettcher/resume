@@ -3,7 +3,10 @@ using ResumeChat.Api.Options;
 
 namespace ResumeChat.Api.Middleware;
 
-public sealed class ApiKeyMiddleware(RequestDelegate next, IOptions<ApiKeyOptions> options)
+public sealed class ApiKeyMiddleware(
+    RequestDelegate next,
+    IOptions<ApiKeyOptions> options,
+    ILogger<ApiKeyMiddleware> logger)
 {
     private readonly string _configuredKey = options.Value.Key;
 
@@ -24,6 +27,7 @@ public sealed class ApiKeyMiddleware(RequestDelegate next, IOptions<ApiKeyOption
         var providedKey = context.Request.Headers["X-Api-Key"].FirstOrDefault();
         if (providedKey != _configuredKey)
         {
+            logger.LogWarning("API key auth failed for {Path}", context.Request.Path);
             context.Response.StatusCode = StatusCodes.Status401Unauthorized;
             return;
         }

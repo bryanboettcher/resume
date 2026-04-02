@@ -1,9 +1,11 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/ResumeChat.Api/ResumeChat.Api.csproj" />
+    <Project Path="src/ResumeChat.AppHost/ResumeChat.AppHost.csproj" />
     <Project Path="src/ResumeChat.Cli/ResumeChat.Cli.csproj" />
     <Project Path="src/ResumeChat.Corpus.Cli/ResumeChat.Corpus.Cli.csproj" />
     <Project Path="src/ResumeChat.Rag/ResumeChat.Rag.csproj" />
+    <Project Path="src/ResumeChat.ServiceDefaults/ResumeChat.ServiceDefaults.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/ResumeChat.Api.Tests/ResumeChat.Api.Tests.csproj" />

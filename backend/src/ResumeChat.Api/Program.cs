@@ -11,6 +11,7 @@ var app = builder.Build();
 app.UseRateLimiter();
 app.UseMiddleware<ApiKeyMiddleware>();
 app.MapApplicationEndpoints();
+app.MapDefaultEndpoints();
 
 app.Run();
 

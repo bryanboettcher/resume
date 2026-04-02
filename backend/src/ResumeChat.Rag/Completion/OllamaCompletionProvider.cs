@@ -1,7 +1,9 @@
+using System.Diagnostics;
 using System.Net.Http.Json;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using ResumeChat.Rag.Models;
 
@@ -12,21 +14,35 @@ public sealed class OllamaCompletionProvider : ICompletionProvider
     private readonly HttpClient _httpClient;
     private readonly OllamaCompletionOptions _options;
     private readonly CompletionSecurityOptions _security;
+    private readonly ILogger<OllamaCompletionProvider> _logger;
 
     public OllamaCompletionProvider(
         HttpClient httpClient,
         IOptions<OllamaCompletionOptions> options,
-        IOptions<CompletionSecurityOptions> security)
+        IOptions<CompletionSecurityOptions> security,
+        ILogger<OllamaCompletionProvider> logger)
     {
         _httpClient = httpClient;
         _options = options.Value;
         _security = security.Value;
+        _logger = logger;
     }
 
     public async IAsyncEnumerable<string> CompleteAsync(
         CompletionRequest request,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
+        using var activity = RagDiagnostics.ActivitySource.StartActivity("rag.complete");
+        activity?.SetTag("rag.complete.model", _options.Model);
+        activity?.SetTag("rag.complete.provider", "Ollama");
+        activity?.SetTag("rag.complete.context_chunks", request.Context.Count);
+
+        var totalStart = Stopwatch.GetTimestamp();
+        var firstTokenRecorded = false;
+
+        _logger.LogInformation("Starting Ollama completion with model {Model} ({ContextChunks} context chunks)",
+            _options.Model, request.Context.Count);
+
         var systemPrompt = SystemPromptBuilder.Build(request, _security.Canary);
 
         var body = new
@@ -62,11 +78,24 @@ public sealed class OllamaCompletionProvider : ICompletionProvider
 
             var chunk = JsonSerializer.Deserialize<OllamaChatChunk>(line);
             if (chunk?.Message?.Content is { Length: > 0 } content)
+            {
+                if (!firstTokenRecorded)
+                {
+                    RagDiagnostics.CompletionFirstTokenDuration.Record(
+                        Stopwatch.GetElapsedTime(totalStart).TotalMilliseconds);
+                    firstTokenRecorded = true;
+                }
+
                 yield return content;
+            }
 
             if (chunk?.Done == true)
-                yield break;
+                break;
         }
+
+        var totalMs = Stopwatch.GetElapsedTime(totalStart).TotalMilliseconds;
+        RagDiagnostics.CompletionTotalDuration.Record(totalMs);
+        _logger.LogInformation("Ollama completion finished in {ElapsedMs:F1}ms", totalMs);
     }
 
     private sealed record OllamaChatChunk(

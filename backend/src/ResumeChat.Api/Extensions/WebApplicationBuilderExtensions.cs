@@ -1,4 +1,6 @@
 using FluentValidation;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Trace;
 using ResumeChat.Api.Options;
 using ResumeChat.Rag;
 using ResumeChat.Rag.Chunking;
@@ -15,6 +17,9 @@ public static class WebApplicationBuilderExtensions
 {
     public static WebApplicationBuilder AddApplicationServices(this WebApplicationBuilder builder)
     {
+        builder.AddServiceDefaults();
+        builder.ConfigureRagTelemetry();
+
         builder.Services.AddOptions<ApiKeyOptions>()
             .BindConfiguration(ApiKeyOptions.SectionName)
             .ValidateDataAnnotations()
@@ -25,6 +30,13 @@ public static class WebApplicationBuilderExtensions
         builder.AddRagServices();
 
         return builder;
+    }
+
+    private static void ConfigureRagTelemetry(this WebApplicationBuilder builder)
+    {
+        builder.Services.AddOpenTelemetry()
+            .WithTracing(tracing => tracing.AddSource(RagDiagnostics.ActivitySourceName))
+            .WithMetrics(metrics => metrics.AddMeter(RagDiagnostics.MeterName));
     }
 
     private static void AddRagServices(this WebApplicationBuilder builder)

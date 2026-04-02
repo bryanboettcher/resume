@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ResumeChat.Rag\ResumeChat.Rag.csproj" />
+    <ProjectReference Include="..\ResumeChat.ServiceDefaults\ResumeChat.ServiceDefaults.csproj" />
   </ItemGroup>
 
   <ItemGroup>
