@@ -1,6 +1,8 @@
+using FluentValidation;
 using ResumeChat.Api.Options;
 using ResumeChat.Rag;
 using ResumeChat.Rag.Chunking;
+using ResumeChat.Rag.Classification;
 using ResumeChat.Rag.Completion;
 using ResumeChat.Rag.Embedding;
 using ResumeChat.Rag.Ingestion;
@@ -18,6 +20,7 @@ public static class WebApplicationBuilderExtensions
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
+        builder.Services.AddValidatorsFromAssemblyContaining<Program>();
         builder.Services.AddResumeChatRateLimiting(builder.Configuration);
         builder.AddRagServices();
 
@@ -57,6 +60,27 @@ public static class WebApplicationBuilderExtensions
 
         // Retrieval
         builder.Services.AddTransient<IRetrievalProvider, VectorRetrievalProvider>();
+
+        // Threat classification
+        var guardProvider = builder.Configuration["Guard:Provider"];
+        if (guardProvider == "Ollama")
+        {
+            builder.Services.AddOptions<OllamaThreatClassifierOptions>()
+                .BindConfiguration(OllamaThreatClassifierOptions.SectionName)
+                .ValidateDataAnnotations()
+                .ValidateOnStart();
+            builder.Services.AddHttpClient<IThreatClassifier, OllamaThreatClassifier>();
+        }
+        else
+        {
+            builder.Services.AddSingleton<IThreatClassifier, PassthroughThreatClassifier>();
+        }
+
+        // Security (canary for prompt injection detection)
+        builder.Services.AddOptions<CompletionSecurityOptions>()
+            .BindConfiguration(CompletionSecurityOptions.SectionName)
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
 
         // Completion — select provider based on configuration
         var completionProvider = builder.Configuration["Completion:Provider"];

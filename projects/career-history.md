@@ -1,13 +1,6 @@
 ---
-title: Bryan Boettcher Career History
-tags: [career, timeline, csharp, dotnet, leadership, architecture]
-related:
-  - projects/call-trader-madera.md
-  - projects/taylor-summit.md
-  - evidence/leadership-mentoring.md
-  - evidence/dotnet-csharp-expertise.md
-category: project
-contact: resume@bryanboettcher.com
+type: career-history
+description: Complete career timeline with corrected dates and details from user
 ---
 
 # Bryan Boettcher — Career History
@@ -30,6 +23,8 @@ Active personal projects: FastAddress, KbStore, Wyoming-Rust, MPC-UPS, Cloud-Orc
 - Established testing strategy (NUnit3 BDD, NSubstitute, Shouldly, Testcontainers)
 - Designed CI/CD pipelines (8 GitHub Actions workflows)
 - Expanded system from 45 features/9 domains to 100+ features/12 domains
+**NOTE:** This role is NOT on the current resume. Must be added.
+**NOTE:** Overlaps with Taylor Summit (concurrent employment).
 
 ### Taylor Summit Consulting, LLC — Software Architect/Lead (2023 – October 2025)
 **Focus:** Healthcare/pharmaceutical platform spanning pharmacy management, clinical patient care, and mobile device management
@@ -42,6 +37,7 @@ Active personal projects: FastAddress, KbStore, Wyoming-Rust, MPC-UPS, Cloud-Orc
 - Rearchitected medical device tracking from imperative CRUD (330 files) to event-sourced MassTransit sagas (126 files)
 - Extended Dapper.Contrib with IL Emit-based column-level dirty tracking
 - Co-authored internal NuGet package (TaylorSummit-Core) shared across 20+ microservices
+**NOTE:** End date corrected from "present" to October 2025. Concurrent employment with Call-Trader.
 
 ### Kansys, Inc. — Software Architect/Lead (2020 – 2023)
 **Domain:** Telecom billing

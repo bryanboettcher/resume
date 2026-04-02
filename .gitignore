@@ -12,3 +12,4 @@ backend/**/*.user
 appsettings.*.json
 !appsettings.json
 !appsettings.Development.json
+frontend/api/config.php

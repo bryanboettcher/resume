@@ -5,4 +5,5 @@ return [
     'api_key'     => 'generate-a-guid-here',
     'rate_limit'  => 10,      // max requests per window per session
     'rate_window' => 60,      // window in seconds
+    'canary'      => '',      // must match backend Security:Canary — used to detect prompt leaks
 ];

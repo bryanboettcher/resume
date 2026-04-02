@@ -1,4 +1,7 @@
+using System.Runtime.CompilerServices;
+using ResumeChat.Api.Validation;
 using ResumeChat.Rag;
+using ResumeChat.Rag.Classification;
 using ResumeChat.Rag.Models;
 using ResumeChat.Rag.Retrieval;
 
@@ -12,8 +15,10 @@ public static class ChatEndpoints
             .Produces(StatusCodes.Status200OK);
 
         app.MapPost("/api/chat", HandleChat)
+            .AddEndpointFilter<ValidationFilter<ChatRequest>>()
             .RequireRateLimiting("chat")
             .Produces(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status401Unauthorized)
             .Produces(StatusCodes.Status429TooManyRequests);
     }
@@ -22,32 +27,47 @@ public static class ChatEndpoints
 
     private static async Task<IResult> HandleChat(
         ChatRequest request,
+        IThreatClassifier classifier,
         IRetrievalProvider retrieval,
         ICompletionProvider completion,
         HttpContext context,
         CancellationToken ct)
     {
-        if (string.IsNullOrWhiteSpace(request.Message))
-            return Results.BadRequest("Message is required.");
+        var threat = await classifier.ClassifyAsync(request.Message, ct).ConfigureAwait(false);
 
-        if (request.Message.Length > 2048)
-            return Results.BadRequest("Message must be 2048 characters or fewer.");
+        context.Response.Headers["X-Threat-Score"] = threat.ThreatScore.ToString();
+
+        if (threat.IsThreat)
+            return await StreamSse(SingleChunk(ChatResponses.Unrelated, ct));
 
         var relevantContext = await retrieval.RetrieveAsync(request.Message, topK: 5, ct).ConfigureAwait(false);
         var completionRequest = new CompletionRequest(request.Message, relevantContext);
 
-        context.Response.ContentType = "text/event-stream";
+        return await StreamSse(completion.CompleteAsync(completionRequest, ct));
 
-        await foreach (var chunk in completion.CompleteAsync(completionRequest, ct).ConfigureAwait(false))
+        async Task<IResult> StreamSse(IAsyncEnumerable<string> chunks)
         {
-            var escaped = chunk.Replace("\n", "\ndata: ");
-            await context.Response.WriteAsync($"data: {escaped}\n\n", ct).ConfigureAwait(false);
-            await context.Response.Body.FlushAsync(ct).ConfigureAwait(false);
-        }
+            context.Response.ContentType = "text/event-stream";
 
-        await context.Response.WriteAsync("data: [DONE]\n\n", ct).ConfigureAwait(false);
-        await context.Response.Body.FlushAsync(ct).ConfigureAwait(false);
-        return Results.Empty;
+            await foreach (var chunk in chunks.ConfigureAwait(false))
+            {
+                var escaped = chunk.Replace("\n", "\ndata: ");
+                await context.Response.WriteAsync($"data: {escaped}\n\n", ct).ConfigureAwait(false);
+                await context.Response.Body.FlushAsync(ct).ConfigureAwait(false);
+            }
+
+            await context.Response.WriteAsync("data: [DONE]\n\n", ct).ConfigureAwait(false);
+            await context.Response.Body.FlushAsync(ct).ConfigureAwait(false);
+            return Results.Empty;
+        }
+    }
+
+    private static async IAsyncEnumerable<string> SingleChunk(
+        string value, [EnumeratorCancellation] CancellationToken ct = default)
+    {
+        await Task.CompletedTask;
+        ct.ThrowIfCancellationRequested();
+        yield return value;
     }
 }
 

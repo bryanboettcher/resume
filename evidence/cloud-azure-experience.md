@@ -1,14 +1,7 @@
 ---
-title: Cloud & Azure Experience
-tags: [azure, aws, cloud, azure-functions, service-bus, cognitive-services, container-apps, blob-storage, entra-id, lambda, opentelemetry]
-related:
-  - projects/taylor-summit.md
-  - projects/call-trader-madera.md
-  - evidence/healthcare-pharma-domain.md
-  - evidence/infrastructure-devops.md
-  - evidence/ai-driven-development.md
-category: evidence
-contact: resume@bryanboettcher.com
+skill: Cloud & Azure Experience
+tags: [azure, aws, cloud, functions, service-bus, cognitive-services, container-apps, blob-storage, ad, entra-id]
+relevance: Demonstrates substantial cloud platform experience across both Azure and AWS in production healthcare and direct mail systems
 ---
 
 # Cloud & Azure Experience — Evidence Portfolio

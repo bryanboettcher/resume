@@ -11,18 +11,23 @@ public sealed class ClaudeCompletionProvider : ICompletionProvider
 {
     private readonly HttpClient _httpClient;
     private readonly ClaudeCompletionOptions _options;
+    private readonly CompletionSecurityOptions _security;
 
-    public ClaudeCompletionProvider(HttpClient httpClient, IOptions<ClaudeCompletionOptions> options)
+    public ClaudeCompletionProvider(
+        HttpClient httpClient,
+        IOptions<ClaudeCompletionOptions> options,
+        IOptions<CompletionSecurityOptions> security)
     {
         _httpClient = httpClient;
         _options = options.Value;
+        _security = security.Value;
     }
 
     public async IAsyncEnumerable<string> CompleteAsync(
         CompletionRequest request,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        var systemPrompt = SystemPromptBuilder.Build(request);
+        var systemPrompt = SystemPromptBuilder.Build(request, _security.Canary);
 
         var body = new
         {

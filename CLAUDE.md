@@ -4,7 +4,7 @@
 This project contains structured evidence documents, project narratives, and link registries that serve as source material for Bryan Boettcher's resume. The eventual goal is a static PDF resume (via Typst) AND a dynamic web resume with an embedded RAG chatbot that answers "how would Bryan solve this?" using real examples from his work.
 
 ## Current Phase
-**Phase 2: Embeddings & RAG Pipeline**
+**Phase 2: Embeddings & RAG Pipeline** — see `RESTART_PHASE2.md` for full work items.
 - Phase 1 complete: static SPA at `bryanboettcher.com/devel/`, C# API at `resume-chat.mallcop.dev`, PHP proxy with rate limiting, SSE streaming chat widget
 - Phase 2: corpus ingestion, retrieval pipeline, real completion providers (Ollama dev / Claude prod), wire RAG end-to-end
 
@@ -20,7 +20,7 @@ backend/
     ResumeChat.Api/          — ASP.NET Core 10 minimal API
       Program.cs             — Bootstraps app: AddApplicationServices(), rate limiter, API key middleware, endpoints
       Endpoints/
-        ChatEndpoints.cs     — POST /api/chat (SSE streaming), GET /api/chat/health
+        ChatEndpoints.cs     — POST /api/chat (SSE streaming via StreamSse), GET /api/chat/health
       Extensions/
         WebApplicationBuilderExtensions.cs  — AddApplicationServices(): options, rate limiting, DI
         ServiceCollectionExtensions.cs      — AddResumeChatRateLimiting(): fixed window policy
@@ -31,9 +31,13 @@ backend/
         ApiKeyOptions.cs     — "ApiKey" section, required Key property, ValidateOnStart()
         RateLimitOptions.cs  — "RateLimit" section, PermitLimit=10, WindowSeconds=60
         CorpusOptions.cs     — "Corpus" section: Directory path to corpus files
+      Validation/
+        ChatRequestValidator.cs  — FluentValidation: not empty, ≤2048 chars, 18 regex injection patterns
+        ValidationFilter.cs      — Generic IEndpointFilter for FluentValidation on minimal API endpoints
     ResumeChat.Rag/          — RAG library (all abstractions and implementations)
       ICompletionProvider.cs — IAsyncEnumerable<string> CompleteAsync(CompletionRequest, ct)
       HardcodedCompletionProvider.cs — Demo impl, echoes user message words
+      ChatResponses.cs       — Shared response constants (Unrelated rejection message)
       Models/
         DocumentMetadata.cs  — SourceFile, Title, Tags
         DocumentChunk.cs     — Text, SectionHeading, ChunkIndex, Metadata
@@ -43,6 +47,12 @@ backend/
       Chunking/
         IChunkingStrategy.cs — IReadOnlyList<DocumentChunk> Chunk(content, metadata)
         MarkdownSectionChunkingStrategy.cs — Split on ##, cap ~400 tokens, split at paragraphs
+      Classification/
+        IThreatClassifier.cs            — Task<ThreatResult> ClassifyAsync(message, ct)
+        ThreatResult.cs                 — IsThreat + ThreatScore, factory methods Safe()/Threat()
+        OllamaThreatClassifier.cs       — qwen3:4b SAFE/UNSAFE classification, 10s timeout, fail-closed
+        OllamaThreatClassifierOptions.cs — "Ollama:Guard" section: BaseUrl, Model, TimeoutSeconds
+        PassthroughThreatClassifier.cs  — Always returns Safe(), used in tests
       Embedding/
         IEmbeddingProvider.cs           — Task<ReadOnlyMemory<float>> EmbedAsync(text, ct)
         OllamaEmbeddingProvider.cs      — Ollama /api/embed HTTP client
@@ -59,38 +69,28 @@ backend/
         CorpusIngestionPipeline.cs   — Read markdown → chunk → embed → yield
         IngestionService.cs          — Orchestrator: probe dimensions → ensure collection → ingest → upsert
       Completion/
-        SystemPromptBuilder.cs       — Builds grounded system prompt from CompletionRequest context
+        CompletionSecurityOptions.cs  — "Security" section: Canary (sentinel token for injection detection)
+        SystemPromptBuilder.cs       — Hardened system prompt: evidence-only, no generic advice, canary injection
         OllamaCompletionProvider.cs  — Ollama /api/chat streaming
         OllamaCompletionOptions.cs   — "Ollama:Completion" section: BaseUrl, Model
         ClaudeCompletionProvider.cs  — Anthropic Messages API streaming
         ClaudeCompletionOptions.cs   — "Claude" section: ApiKey, Model, MaxTokens
   tests/
     ResumeChat.Api.Tests/    — Integration tests with WebApplicationFactory
-      ApiFactory.cs          — Test factory, overrides completion + retrieval with test doubles
+      ApiFactory.cs          — Test factory, overrides completion + retrieval + threat classifier with test doubles
       ChatApiTests.cs        — 5 tests: health, auth, startup validation, SSE streaming
     ResumeChat.Cli/          — Console app for corpus ingestion
       Program.cs             — Resolves IngestionService, streams progress to stdout
-    ResumeChat.Corpus.Cli/   — Source-code analysis pipeline CLI
-      Program.cs             — Command routing: scan, analyze, triage, full-analysis; CLI override wiring
-      CorpusDatabase.cs      — EF Core + raw Npgsql: upserts, analysis queries, tag inserts
-      CorpusDbContext.cs     — Schema: source_files, file_analysis, file_tags, file_relationships
-      SourceTreeWalker.cs    — Recursive directory walker with extension/size/name filtering
-      SourceFile.cs          — Record: Repo, Branch, FilePath, Language, ContentText, ContentHash, LineCount, SizeBytes
-      OllamaAnalyzer.cs      — Ollama /api/generate client; TriageObservation + FullAnalysisResult models
-      IOllamaAnalyzer.cs     — Interface: TriageAsync, TriageDetailAsync, AnalyzeAsync
-      AnalysisRunner.cs      — Concurrent two-phase runner: SemaphoreSlim-bounded triage → full analysis
-      IAnalysisRunner.cs     — Interface: RunTriageAsync, RunFullAnalysisAsync → AnalysisStats
-      AnalysisFilter.cs      — Parsed CLI filter+overrides: --repo, --branch, --language, --limit, --ollama-url, --concurrency, --model
-      CorpusOptions.cs       — "Corpus" section (ConnectionString, Sources[]); "Ollama" section (BaseUrl, Model, MaxConcurrency)
-      appsettings.json       — DB connection, source paths, Ollama endpoint
     ResumeChat.Rag.Tests/    — Unit tests for RAG components
       HardcodedCompletionProviderTests.cs       — 5 tests: streaming, edge cases, cancellation
       MarkdownSectionChunkingStrategyTests.cs   — 7 tests: sections, frontmatter, large splits, indexing
+      ThreatClassifierTestCases.cs             — 75 attack strings + 8 safe queries for live Ollama testing
 
 frontend/
+  index.html                 — Static SPA: 60/40 split layout (resume left, chat right)
   api/
-    chat.php                 — PHP proxy with session-based rate limiting
-    config.example.php       — Config template for API key/URL
+    chat.php                 — PHP proxy: rate limiting, SSE passthrough, canary detection
+    config.example.php       — Config template for API key/URL/canary
 
 Dockerfile                   — Multi-stage: SDK build + test → ASP.NET runtime, port 5000. Corpus mounted at /app/corpus via k8s volume.
 ```
@@ -112,57 +112,48 @@ Dockerfile                   — Multi-stage: SDK build + test → ASP.NET runti
 - `IIngestionPipeline` → `CorpusIngestionPipeline` (read → chunk → embed → yield)
 - `IRetrievalProvider` → `VectorRetrievalProvider` (embed query → Qdrant search)
 - `ICompletionProvider` → `HardcodedCompletionProvider` | `OllamaCompletionProvider` | `ClaudeCompletionProvider`
-- `SystemPromptBuilder` — grounds completion in retrieved context
+- `SystemPromptBuilder` — hardened prompt: evidence-grounded answers only, refuses off-topic/injection, injects canary sentinel
 - Provider selection via `Completion:Provider` config key ("Hardcoded" | "Ollama" | "Claude")
 
-### Ingestion
-- **Endpoint:** `POST /api/admin/ingest` — streams SSE progress, requires API key, error handling with [ERROR]/[CANCELLED]/[DONE] events
-- **CLI:** `dotnet run --project src/ResumeChat.Cli -- <corpus-dir>` — runs from workstation, NOT in Docker image
-- **CLI config:** `src/ResumeChat.Cli/appsettings.json` uses external URLs (llm.mallcop.dev, qdrant.mallcop.dev)
-- **Status:** `GET /api/admin/ingest/status` — placeholder, returns ready
-- **Current corpus:** 156 chunks (94 evidence, 49 projects, 13 links) embedded with nomic-embed-text (768 dims)
+### Prompt Injection Defense (layered)
+Defense in depth with three layers:
+1. **FluentValidation endpoint filter** — `ChatRequestValidator` with 18 source-generated regex patterns catches obvious attacks (system prompt extraction, role hijacking, delimiter injection, data exfiltration, encoding tricks). Rejected at 400 before handler runs.
+2. **Threat classification** — `IThreatClassifier` → `OllamaThreatClassifier` (qwen3:4b SAFE/UNSAFE classification). 10s timeout, fail-closed on timeout/error/garbage output. Checks UNSAFE first (superset of SAFE), then requires explicit SAFE. Provider selection via `Guard:Provider` config key ("Ollama" or omit for passthrough).
+3. **Canary sentinel** — Backend injects canary token (from `Security:Canary` config) into system prompt. PHP proxy scans SSE output with sliding window buffer (handles cross-chunk boundaries). If detected: aborts response, burns session rate limit, spikes threat score +50.
+4. **Session threat scoring** — `X-Threat-Score` header flows: backend → PHP proxy (accumulates in session) → backend (on subsequent requests). Canary trips add +50.
+- Both sides must share the same canary value — backend via `Security:Canary` in appsettings, PHP via `canary` in config.php
+- `CompletionSecurityOptions` has `[Required]` + `[MinLength(16)]` — app refuses to start without it
+- `ChatResponses.Unrelated` — single constant for all rejection messages across validator, classifier, and endpoint
 
-### Corpus Analysis CLI (`ResumeChat.Corpus.Cli`)
-- **Scan:** `dotnet run --project src/ResumeChat.Corpus.Cli` — walks source trees, loads files into PostgreSQL
-- **Analyze:** `dotnet run --project src/ResumeChat.Corpus.Cli -- analyze` — two-phase: triage then full analysis
-- **Triage only:** `dotnet run --project src/ResumeChat.Corpus.Cli -- triage`
-- **Full analysis only:** `dotnet run --project src/ResumeChat.Corpus.Cli -- full-analysis`
-- **Filter/override flags** (all three analysis commands): `--repo`, `--branch`, `--language`, `--limit`, `--ollama-url`, `--model`, `--concurrency`
-- **Database:** PostgreSQL 17 on port 5433, `docker compose -f docker-compose.corpus.yml up -d`
-- **LLM:** Ollama with qwen2.5-coder:7b on local GPU for analysis
-- **Schema:** `source_files` → `file_analysis` (`analysis_type` = `triage` or `full_analysis`) → `file_tags` (resume keywords) → `file_relationships`
-- **Triage approach:** Binary-observation strategy — LLM answers four boolean dimensions for each file: `has_logic`, `has_domain_rules`, `has_composition`, `has_data_modeling`. Any dimension true → medium interest (proceed to full analysis); all false → low (skip). Result stored as `TriageObservation` JSON in `file_analysis` with `analysis_type='triage'`.
-- **Concurrency:** `AnalysisRunner` uses `SemaphoreSlim` bounded by `OllamaOptions.MaxConcurrency` (default 1, overridable via `--concurrency`). Both triage and full-analysis phases run concurrently within that bound.
-- **Full analysis output:** `purpose`, `domain_concepts`, `patterns`, `notable_techniques`, `frameworks`, `interactions`, `complexity` (low/medium/high), `resume_keywords` — keywords also written to `file_tags`.
-- **Current state:** ~2,982 files ingested (madera-apps, FastAddress, kb-platform, homelab)
-- **Next:** MCP server to query analysis data for RAG pipeline
+### Ingestion
+- **Endpoint:** `POST /api/admin/ingest` — streams SSE progress, requires API key
+- **CLI:** `dotnet cli/ResumeChat.Cli.dll <corpus-dir>` — console output
+- **Status:** `GET /api/admin/ingest/status` — placeholder, returns ready
+- Corpus mounted as k8s volume at `/app/corpus`, not baked into image
 
 ### Not Yet Done
-- Claude completion provider needs API key secret for production use
-- Frontend chat widget may need SSE newline handling updates
-- Prompt tuning based on real usage
-- Ingestion automation (re-run when corpus changes)
-- Squash & merge chatbot branch to main
+- Set matching `Security:Canary` value in backend appsettings AND PHP config.php
+- Switch Ollama completion model to `qwen2.5:14b` (llama3.2:3b fails all injection tests)
+- Production config/secrets for Claude API key
+- K8s volume mount for corpus directory
+- Docker image rebuild + deploy to cluster
+- End-to-end test with real Ollama + Qdrant
+
+## Frontend Architecture
+
+- **Layout:** 60/40 CSS grid split — resume scrolls on left, chat is full-height on right
+- **Mobile:** stacks vertically, sticky "Ask about Bryan's experience" bar jumps to chat
+- **Chat UI:** bubble-style (user right, bot left), typing indicator, auto-grow textarea
+- **Markdown:** `marked.js` + `DOMPurify` renders bot responses; styled for paragraphs, lists, code, blockquotes
+- **SSE parser:** buffers by `\n\n` delimiters, reassembles multi-line `data:` fields per SSE spec
+- **No jQuery** — vanilla JS throughout
+- **Deployed to:** `bryanboettcher.com/devel/` via rsync to `angryhosting.com:/home/insta/bryanboettcher.com/www/html/devel/`
 
 ## Infrastructure
 
-- **Cluster:** 3x nodes, 32 CPU / 96GB RAM each — no GPU
-- **Ollama:** `ollama.ai.svc.cluster.local:11434` / external: `llm.mallcop.dev` — models: llama3.2, nomic-embed-text, mxbai-embed-large
-- **Qdrant:** `qdrant.qdrant.svc.cluster.local:6333` / external: `qdrant.mallcop.dev` — collection: resume-chunks
-- **API:** `resume-chat.mallcop.dev` — image: `ghcr.io/bryanboettcher/resume-chat:latest`
-
-### Deployment Config (env vars for pod)
-```
-ApiKey__Key=<secret>
-Ollama__Embedding__BaseUrl=http://ollama.ai.svc.cluster.local:11434
-Ollama__Embedding__Model=nomic-embed-text
-Ollama__Completion__BaseUrl=http://ollama.ai.svc.cluster.local:11434
-Ollama__Completion__Model=llama3.2
-Qdrant__BaseUrl=http://qdrant.qdrant.svc.cluster.local:6333
-Qdrant__CollectionName=resume-chunks
-Completion__Provider=Ollama
-Corpus__Directory=/app/corpus
-```
+- **Cluster:** 96x Ryzen 9 cores, 288GB RAM, NVMe — no GPU
+- **Qdrant:** To be deployed to k8s cluster (separate session)
+- **Ollama:** Already running on cluster at `https://llm.mallcop.dev` — has `qwen2.5:14b` (recommended) and `llama3.2:latest` (too weak for injection resistance)
 
 ## Key Facts
 

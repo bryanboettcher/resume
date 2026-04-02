@@ -10,4 +10,8 @@
     <ProjectReference Include="..\ResumeChat.Rag\ResumeChat.Rag.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
+  </ItemGroup>
+
 </Project>

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using ResumeChat.Rag;
+using ResumeChat.Rag.Classification;
 using ResumeChat.Rag.Models;
 using ResumeChat.Rag.Retrieval;
 
@@ -15,11 +16,13 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
     {
         builder.UseSetting("ApiKey:Key", TestApiKey);
         builder.UseSetting("Corpus:Directory", "/tmp/test-corpus");
+        builder.UseSetting("Security:Canary", "test-canary-sentinel-value");
 
         builder.ConfigureServices(services =>
         {
             ReplaceService<ICompletionProvider, InstantCompletionProvider>(services);
             ReplaceService<IRetrievalProvider, EmptyRetrievalProvider>(services);
+            ReplaceService<IThreatClassifier, PassthroughThreatClassifier>(services);
         });
     }
 

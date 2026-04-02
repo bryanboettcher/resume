@@ -1,14 +1,7 @@
 ---
-title: Healthcare & Pharmaceutical Domain Expertise
-tags: [healthcare, pharma, ncpdp, dscsa, epcis, gs1, fda, dea, pmp, hipaa, mdm, pki, clinical, telehealth, edi, onnx, azure]
-related:
-  - projects/taylor-summit.md
-  - evidence/cloud-azure-experience.md
-  - evidence/ai-driven-development.md
-  - evidence/dotnet-csharp-expertise.md
-  - evidence/distributed-systems-architecture.md
-category: evidence
-contact: resume@bryanboettcher.com
+skill: Healthcare & Pharmaceutical Domain Expertise
+tags: [healthcare, pharma, ncpdp, dscsa, epcis, gs1, fda, dea, pmp, hipaa, mdm, pki, clinical, telehealth]
+relevance: Demonstrates deep domain expertise in highly regulated healthcare and pharmaceutical systems — protocol implementations, regulatory compliance, and clinical AI workflows
 ---
 
 # Healthcare & Pharmaceutical Domain — Evidence Portfolio

@@ -13,19 +13,6 @@ sealed class CorpusOptions
     public SourceConfig[] Sources { get; init; } = [];
 }
 
-sealed class OllamaOptions
-{
-    public const string SectionName = "Ollama";
-
-    [Required]
-    public string BaseUrl { get; init; } = "http://localhost:11434";
-
-    [Required]
-    public string Model { get; init; } = "qwen2.5-coder:7b";
-
-    public int MaxConcurrency { get; init; } = 1;
-}
-
 sealed class SourceConfig
 {
     [Required]

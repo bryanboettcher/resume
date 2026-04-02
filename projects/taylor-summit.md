@@ -1,16 +1,9 @@
 ---
-title: Taylor Summit Healthcare Platform
-tags: [dotnet, healthcare, pharma, mdm, pki, azure, masstransit, dapper, angular, ai, onnx, regulatory-compliance, ncpdp, epcis, dscsa, aspire, event-sourcing]
-related:
-  - evidence/healthcare-pharma-domain.md
-  - evidence/cloud-azure-experience.md
-  - evidence/distributed-systems-architecture.md
-  - evidence/ai-driven-development.md
-  - evidence/leadership-mentoring.md
-  - evidence/dotnet-csharp-expertise.md
-  - projects/career-history.md
-category: project
-contact: resume@bryanboettcher.com
+project: Taylor Summit Healthcare Platform
+company: Taylor Summit Consulting, LLC
+dates: 2023 – October 2025
+role: Software Architect/Lead
+tags: [dotnet, healthcare, pharma, mdm, pki, azure, masstransit, dapper, angular, ai, onnx, regulatory-compliance]
 ---
 
 # Taylor Summit Healthcare Platform — Project Narrative
