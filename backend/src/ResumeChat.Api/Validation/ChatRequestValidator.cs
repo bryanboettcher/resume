@@ -1,7 +1,7 @@
 using System.Text.RegularExpressions;
 using FluentValidation;
-using ResumeChat.Api.Endpoints;
 using ResumeChat.Rag;
+using ResumeChat.Rag.Models;
 
 namespace ResumeChat.Api.Validation;
 

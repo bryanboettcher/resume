@@ -23,18 +23,19 @@ public sealed class VectorRetrievalProvider : IRetrievalProvider
     }
 
     public async Task<IReadOnlyList<ScoredChunk>> RetrieveAsync(
-        string query,
-        int topK = 5,
+        RetrievalRequest request,
         CancellationToken cancellationToken = default)
     {
         using var activity = RagDiagnostics.ActivitySource.StartActivity("rag.retrieve");
-        activity?.SetTag("rag.query_length", query.Length);
-        activity?.SetTag("rag.top_k", topK);
+        activity?.SetTag("rag.query_length", request.Query.Length);
+        activity?.SetTag("rag.top_k", request.TopK);
+        if (request.Dimensions.HasValue)
+            activity?.SetTag("rag.dimensions", request.Dimensions.Value);
 
         var startTimestamp = Stopwatch.GetTimestamp();
 
-        var queryEmbedding = await _embedder.EmbedAsync(query, cancellationToken).ConfigureAwait(false);
-        var results = await _vectorStore.SearchAsync(queryEmbedding, topK, cancellationToken).ConfigureAwait(false);
+        var queryEmbedding = await _embedder.EmbedAsync(request.Query, cancellationToken).ConfigureAwait(false);
+        var results = await _vectorStore.SearchAsync(queryEmbedding, request.TopK, request.Dimensions, cancellationToken).ConfigureAwait(false);
 
         var elapsedMs = Stopwatch.GetElapsedTime(startTimestamp).TotalMilliseconds;
         activity?.SetTag("rag.result_count", results.Count);
@@ -45,7 +46,7 @@ public sealed class VectorRetrievalProvider : IRetrievalProvider
             RagDiagnostics.TopRetrievalScore.Record(results[0].Score);
 
         _logger.LogInformation("Retrieved {ResultCount} chunks for query ({QueryLength} chars) in {ElapsedMs:F1}ms",
-            results.Count, query.Length, elapsedMs);
+            results.Count, request.Query.Length, elapsedMs);
 
         foreach (var scored in results)
         {

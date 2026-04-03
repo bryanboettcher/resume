@@ -8,8 +8,13 @@ using ResumeChat.Rag.Classification;
 using ResumeChat.Rag.Completion;
 using ResumeChat.Rag.Embedding;
 using ResumeChat.Rag.Ingestion;
+using ResumeChat.Rag.Pipeline;
+using ResumeChat.Rag.Response;
 using ResumeChat.Rag.Retrieval;
 using ResumeChat.Rag.VectorStore;
+using ResumeChat.Storage.Extensions;
+using ResumeChat.Storage.Services;
+using ResumeChat.Storage.Repositories;
 
 namespace ResumeChat.Api.Extensions;
 
@@ -28,6 +33,9 @@ public static class WebApplicationBuilderExtensions
         builder.Services.AddValidatorsFromAssemblyContaining<Program>();
         builder.Services.AddResumeChatRateLimiting(builder.Configuration);
         builder.AddRagServices();
+
+        if (builder.Configuration["Postgres:ConnectionString"] is not null)
+            builder.Services.AddResumeChatStorage(builder.Configuration);
 
         return builder;
     }
@@ -66,8 +74,11 @@ public static class WebApplicationBuilderExtensions
         // Chunking
         builder.Services.AddSingleton<IChunkingStrategy, MarkdownSectionChunkingStrategy>();
 
-        // Ingestion
-        builder.Services.AddTransient<IIngestionPipeline, CorpusIngestionPipeline>();
+        // Ingestion — use DB-backed pipeline when Postgres is configured
+        if (builder.Configuration["Postgres:ConnectionString"] is not null)
+            builder.Services.AddTransient<IIngestionPipeline, DatabaseIngestionPipeline>();
+        else
+            builder.Services.AddTransient<IIngestionPipeline, CorpusIngestionPipeline>();
         builder.Services.AddTransient<IngestionService>();
 
         // Retrieval
@@ -94,28 +105,38 @@ public static class WebApplicationBuilderExtensions
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
-        // Completion — select provider based on configuration
-        var completionProvider = builder.Configuration["Completion:Provider"];
-        switch (completionProvider)
+        // Query pipeline
+        builder.Services.AddOptions<DimensionPolicyOptions>()
+            .BindConfiguration(DimensionPolicyOptions.SectionName)
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        builder.Services.AddTransient<IQueryEnricher, SynonymExpansionEnricher>();
+        builder.Services.AddTransient<IQueryEnricher, DimensionPolicyEnricher>();
+        builder.Services.AddTransient<IQueryTransformer, DefaultQueryTransformer>();
+
+        // Response — select provider based on configuration
+        var responseProvider = builder.Configuration["Completion:Provider"];
+        switch (responseProvider)
         {
             case "Claude":
-                builder.Services.AddOptions<ClaudeCompletionOptions>()
-                    .BindConfiguration(ClaudeCompletionOptions.SectionName)
+                builder.Services.AddOptions<ClaudeResponseOptions>()
+                    .BindConfiguration(ClaudeResponseOptions.SectionName)
                     .ValidateDataAnnotations()
                     .ValidateOnStart();
-                builder.Services.AddSingleton<ICompletionProvider, ClaudeCompletionProvider>();
+                builder.Services.AddSingleton<IResponseProvider, ClaudeResponseProvider>();
                 break;
 
             case "Ollama":
-                builder.Services.AddOptions<OllamaCompletionOptions>()
-                    .BindConfiguration(OllamaCompletionOptions.SectionName)
+                builder.Services.AddOptions<OllamaResponseOptions>()
+                    .BindConfiguration(OllamaResponseOptions.SectionName)
                     .ValidateDataAnnotations()
                     .ValidateOnStart();
-                builder.Services.AddHttpClient<ICompletionProvider, OllamaCompletionProvider>();
+                builder.Services.AddHttpClient<IResponseProvider, OllamaResponseProvider>();
                 break;
 
             default:
-                builder.Services.AddSingleton<ICompletionProvider, HardcodedCompletionProvider>();
+                builder.Services.AddSingleton<IResponseProvider, CannedResponseProvider>();
                 break;
         }
     }

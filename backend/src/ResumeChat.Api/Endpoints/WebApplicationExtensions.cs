@@ -6,6 +6,9 @@ public static class WebApplicationExtensions
     {
         ChatEndpoints.MapTo(app);
         IngestionEndpoints.MapTo(app);
+        CorpusSyncEndpoints.MapTo(app);
+        DebugRetrievalEndpoints.MapTo(app);
+        InteractionEndpoints.MapTo(app);
         return app;
     }
 }

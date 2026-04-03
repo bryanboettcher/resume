@@ -1,8 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace ResumeChat.Rag.Completion;
+namespace ResumeChat.Rag.Response;
 
-public sealed class ClaudeCompletionOptions
+public sealed class ClaudeResponseOptions
 {
     public const string SectionName = "Claude";
 

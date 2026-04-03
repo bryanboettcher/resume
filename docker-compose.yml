@@ -14,6 +14,17 @@ services:
     volumes:
       - qdrant-data:/qdrant/storage
 
+  postgres:
+    image: postgres:17-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: resumechat
+      POSTGRES_USER: resumechat
+      POSTGRES_PASSWORD: resumechat
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
   api:
     build:
       context: backend
@@ -24,8 +35,8 @@ services:
       ApiKey__Key: abc123
       Ollama__Embedding__BaseUrl: http://host.docker.internal:11434
       Ollama__Embedding__Model: nomic-embed-text
-      Ollama__Completion__BaseUrl: http://host.docker.internal:11434
-      Ollama__Completion__Model: qwen2.5-coder:7b
+      Ollama__Response__BaseUrl: http://host.docker.internal:11434
+      Ollama__Response__Model: qwen2.5-coder:7b
       Qdrant__BaseUrl: http://qdrant:6333
       Qdrant__CollectionName: resume-chunks
       Completion__Provider: ${COMPLETION_PROVIDER:-Ollama}
@@ -34,6 +45,7 @@ services:
       Security__Canary: local-dev-canary-token
       OTEL_EXPORTER_OTLP_ENDPOINT: http://aspire-dashboard:18889
       Corpus__Directory: /app/corpus
+      Postgres__ConnectionString: Host=postgres;Port=5432;Database=resumechat;Username=resumechat;Password=resumechat
     volumes:
       - ./evidence:/app/corpus/evidence:ro
       - ./projects:/app/corpus/projects:ro
@@ -42,6 +54,7 @@ services:
       - "host.docker.internal:host-gateway"
     depends_on:
       - qdrant
+      - postgres
       - aspire-dashboard
 
   frontend:
@@ -56,3 +69,4 @@ services:
 
 volumes:
   qdrant-data:
+  pgdata:

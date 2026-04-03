@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ResumeChat Admin</title>
+<style>
+  :root { --bg: #1a1a2e; --surface: #16213e; --border: #0f3460; --text: #e0e0e0; --muted: #888; --accent: #e94560; --green: #4ecca3; --blue: #7ec8e3; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); padding: 1rem; max-width: 1200px; margin: 0 auto; }
+  h1 { font-size: 1.4rem; margin-bottom: 1rem; color: var(--blue); }
+  h2 { font-size: 1.1rem; margin-bottom: 0.5rem; color: var(--muted); }
+  .controls { display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; align-items: center; }
+  input, select { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 0.4rem 0.6rem; border-radius: 4px; font-size: 0.85rem; }
+  input:focus { outline: 1px solid var(--blue); }
+  button { background: var(--border); color: var(--text); border: none; padding: 0.4rem 0.8rem; border-radius: 4px; cursor: pointer; font-size: 0.85rem; }
+  button:hover { background: var(--accent); }
+  button.danger { background: var(--accent); }
+  button.warn { background: #e9a045; color: #000; }
+  .status-bar { display: flex; gap: 1rem; margin-bottom: 1rem; padding: 0.5rem; background: var(--surface); border-radius: 4px; font-size: 0.8rem; color: var(--muted); flex-wrap: wrap; }
+  .status-bar span { white-space: nowrap; }
+  .status-bar .val { color: var(--green); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+  th { text-align: left; padding: 0.4rem; border-bottom: 2px solid var(--border); color: var(--muted); font-weight: 600; position: sticky; top: 0; background: var(--bg); }
+  td { padding: 0.4rem; border-bottom: 1px solid var(--border); vertical-align: top; max-width: 300px; }
+  td.query { color: var(--blue); }
+  td.response { max-width: 400px; white-space: pre-wrap; word-break: break-word; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  tr:hover { background: var(--surface); }
+  .badge { display: inline-block; padding: 0.1rem 0.4rem; border-radius: 3px; font-size: 0.75rem; }
+  .badge.threat { background: var(--accent); color: #fff; }
+  .badge.cache { background: var(--green); color: #000; }
+  .badge.expired { background: var(--muted); color: #000; }
+  .actions { display: flex; gap: 0.3rem; }
+  .detail-modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: none; align-items: center; justify-content: center; z-index: 10; }
+  .detail-modal.open { display: flex; }
+  .detail-content { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; max-width: 800px; width: 90%; max-height: 80vh; overflow-y: auto; }
+  .detail-content pre { background: var(--bg); padding: 0.5rem; border-radius: 4px; overflow-x: auto; font-size: 0.8rem; white-space: pre-wrap; }
+  .detail-content dt { color: var(--muted); font-size: 0.8rem; margin-top: 0.5rem; }
+  .detail-content dd { margin-bottom: 0.5rem; }
+  .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+</style>
+</head>
+<body>
+<h1>ResumeChat Admin</h1>
+
+<div class="controls">
+  <label>API Key: <input type="password" id="apiKey" value="abc123" size="16"></label>
+  <label>Search: <input type="text" id="searchQuery" placeholder="search queries/responses..." size="30"></label>
+  <label>Limit: <input type="number" id="limit" value="20" min="1" max="100" size="4"></label>
+  <button onclick="loadInteractions()">Refresh</button>
+  <button onclick="loadStatus()">Status</button>
+</div>
+
+<div class="status-bar" id="statusBar">
+  <span>Corpus: <span class="val" id="statDocs">-</span> docs, <span class="val" id="statChunks">-</span> chunks</span>
+  <span>Vectors: <span class="val" id="statPoints">-</span> points (<span class="val" id="statDims">-</span>d)</span>
+  <span>Provider: <span class="val" id="statProvider">-</span></span>
+  <span>Cache: <span class="val" id="statCache">-</span></span>
+</div>
+
+<table>
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Time</th>
+      <th>Query</th>
+      <th>Response</th>
+      <th>Score</th>
+      <th>Ms</th>
+      <th>Flags</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody id="tableBody"></tbody>
+</table>
+
+<div class="detail-modal" id="detailModal" onclick="if(event.target===this)closeDetail()">
+  <div class="detail-content" id="detailContent"></div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const api = (path, opts = {}) => {
+  const key = $('apiKey').value;
+  return fetch(path, { ...opts, headers: { 'X-Api-Key': key, ...opts.headers } });
+};
+
+async function loadStatus() {
+  try {
+    const r = await api('/api/admin/ingest/status');
+    const d = await r.json();
+    $('statPoints').textContent = d.vectorStore?.pointCount ?? '-';
+    $('statDims').textContent = d.vectorStore?.vectorDimensions ?? '-';
+    $('statProvider').textContent = d.pipeline?.completionProvider ?? '-';
+    $('statCache').textContent = d.pipeline?.dimensionPolicy?.defaultDimensions ? d.pipeline.dimensionPolicy.defaultDimensions + 'd' : 'full';
+    $('statDocs').textContent = d.corpus?.directoryExists ? 'ok' : 'missing';
+    $('statChunks').textContent = '-';
+  } catch(e) { console.error(e); }
+}
+
+async function loadInteractions() {
+  const search = $('searchQuery').value.trim();
+  const limit = $('limit').value;
+  const url = search
+    ? `/api/admin/interactions/search?query=${encodeURIComponent(search)}&limit=${limit}`
+    : `/api/admin/interactions?limit=${limit}`;
+  try {
+    const r = await api(url);
+    const data = await r.json();
+    renderTable(data);
+  } catch(e) { console.error(e); $('tableBody').innerHTML = `<tr><td colspan="8">Error: ${e.message}</td></tr>`; }
+}
+
+function renderTable(rows) {
+  $('tableBody').innerHTML = rows.map(r => {
+    const time = new Date(r.createdAt).toLocaleString();
+    const query = esc(r.originalQuery);
+    const resp = esc(r.responseText?.substring(0, 120) || '');
+    const topScore = parseTopScore(r.retrievedDocuments);
+    const ms = r.totalMs ? Math.round(r.totalMs) : '-';
+    const flags = [];
+    if (r.isThreat) flags.push('<span class="badge threat">threat</span>');
+    if (r.cacheHit) flags.push('<span class="badge cache">cache</span>');
+    if (r.queryHash === '') flags.push('<span class="badge expired">expired</span>');
+    return `<tr>
+      <td>${r.id}</td>
+      <td class="truncate" style="max-width:120px">${time}</td>
+      <td class="query truncate">${query}</td>
+      <td class="response truncate">${resp}</td>
+      <td class="num">${topScore}</td>
+      <td class="num">${ms}</td>
+      <td>${flags.join(' ')}</td>
+      <td class="actions">
+        <button onclick="showDetail(${r.id})">view</button>
+        <button class="warn" onclick="expireInteraction(${r.id})">expire</button>
+        <button class="danger" onclick="purgeInteraction(${r.id})">purge</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function parseTopScore(docsJson) {
+  try {
+    const docs = JSON.parse(docsJson || '[]');
+    if (!docs.length) return '-';
+    return docs[0].score?.toFixed(3) ?? '-';
+  } catch { return '-'; }
+}
+
+async function showDetail(id) {
+  const r = await api(`/api/admin/interactions/${id}`);
+  if (!r.ok) return;
+  const d = await r.json();
+  let docs = [];
+  try { docs = JSON.parse(d.retrievedDocuments || '[]'); } catch {}
+  $('detailContent').innerHTML = `
+    <h2>Interaction #${d.id}</h2>
+    <dl>
+      <dt>Original Query</dt><dd>${esc(d.originalQuery)}</dd>
+      <dt>Processed Query</dt><dd style="color:var(--muted);font-size:0.85rem">${esc(d.processedQuery)}</dd>
+      <dt>Response</dt><dd><pre>${esc(d.responseText)}</pre></dd>
+      <dt>Retrieved Documents</dt><dd>${docs.map(doc =>
+        `<div style="font-size:0.8rem;margin:0.2rem 0"><span class="val">${doc.score?.toFixed(4)}</span> ${esc(doc.source_file)} - ${esc(doc.section)}</div>`
+      ).join('') || '<em>none</em>'}</dd>
+      <dt>Provider / Model</dt><dd>${esc(d.provider)} / ${esc(d.modelName)}</dd>
+      <dt>Timing</dt><dd>Total: ${d.totalMs ? Math.round(d.totalMs) + 'ms' : '-'} | Completion: ${d.completionMs ? Math.round(d.completionMs) + 'ms' : '-'}</dd>
+      <dt>Cache</dt><dd>Hash: <code>${d.queryHash}</code> | Hit: ${d.cacheHit} | Expires: ${d.expiresAt ? new Date(d.expiresAt).toLocaleString() : 'never'}</dd>
+      <dt>Threat</dt><dd>${d.isThreat ? `Yes (score ${d.threatScore})` : 'No'}</dd>
+      <dt>Created</dt><dd>${new Date(d.createdAt).toLocaleString()}</dd>
+    </dl>
+    <div style="margin-top:1rem;display:flex;gap:0.5rem">
+      <button class="warn" onclick="expireInteraction(${d.id});closeDetail()">Expire</button>
+      <button class="danger" onclick="purgeInteraction(${d.id});closeDetail()">Purge</button>
+      <button onclick="closeDetail()">Close</button>
+    </div>
+  `;
+  $('detailModal').classList.add('open');
+}
+
+function closeDetail() { $('detailModal').classList.remove('open'); }
+
+async function expireInteraction(id) {
+  if (!confirm(`Expire interaction #${id}? It will no longer be returned as a cache hit.`)) return;
+  await api(`/api/admin/interactions/${id}/expire`, { method: 'POST' });
+  loadInteractions();
+}
+
+async function purgeInteraction(id) {
+  if (!confirm(`Permanently delete interaction #${id}?`)) return;
+  await api(`/api/admin/interactions/${id}`, { method: 'DELETE' });
+  loadInteractions();
+}
+
+function esc(s) { const d = document.createElement('div'); d.textContent = s ?? ''; return d.innerHTML; }
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDetail(); });
+$('searchQuery').addEventListener('keydown', e => { if (e.key === 'Enter') loadInteractions(); });
+
+loadStatus();
+loadInteractions();
+</script>
+</body>
+</html>

@@ -5,6 +5,9 @@ namespace ResumeChat.Rag.VectorStore;
 public interface IVectorStore
 {
     Task UpsertAsync(EmbeddedChunk chunk, CancellationToken cancellationToken = default);
-    Task<IReadOnlyList<ScoredChunk>> SearchAsync(ReadOnlyMemory<float> queryEmbedding, int topK, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<ScoredChunk>> SearchAsync(ReadOnlyMemory<float> queryEmbedding, int topK, int? dimensions = null, CancellationToken cancellationToken = default);
     Task EnsureCollectionAsync(int vectorSize, CancellationToken cancellationToken = default);
+    Task<CollectionInfo> GetCollectionInfoAsync(CancellationToken cancellationToken = default);
 }
+
+public sealed record CollectionInfo(string Name, long PointCount, int VectorSize);

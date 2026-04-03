@@ -1,6 +1,8 @@
 using Microsoft.Extensions.Options;
 using ResumeChat.Api.Options;
 using ResumeChat.Rag.Ingestion;
+using ResumeChat.Rag.Pipeline;
+using ResumeChat.Rag.VectorStore;
 
 namespace ResumeChat.Api.Endpoints;
 
@@ -53,9 +55,38 @@ public static class IngestionEndpoints
         return Results.Empty;
     }
 
-    private static IResult HandleStatus()
+    private static async Task<IResult> HandleStatus(
+        IVectorStore vectorStore,
+        IOptions<CorpusOptions> corpusOptions,
+        IOptions<DimensionPolicyOptions> dimensionPolicy,
+        IConfiguration configuration,
+        CancellationToken ct)
     {
-        // Placeholder — could track last ingestion time, chunk count, etc.
-        return Results.Ok(new { status = "ready" });
+        var collection = await vectorStore.GetCollectionInfoAsync(ct).ConfigureAwait(false);
+
+        return Results.Ok(new
+        {
+            corpus = new
+            {
+                directory = corpusOptions.Value.Directory,
+                directoryExists = Directory.Exists(corpusOptions.Value.Directory)
+            },
+            vectorStore = new
+            {
+                collection = collection.Name,
+                pointCount = collection.PointCount,
+                vectorDimensions = collection.VectorSize
+            },
+            pipeline = new
+            {
+                completionProvider = configuration["Completion:Provider"] ?? "Hardcoded",
+                guardProvider = configuration["Guard:Provider"] ?? "Passthrough",
+                dimensionPolicy = new
+                {
+                    defaultDimensions = dimensionPolicy.Value.DefaultDimensions,
+                    defaultTopK = dimensionPolicy.Value.DefaultTopK
+                }
+            }
+        });
     }
 }

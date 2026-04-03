@@ -4,41 +4,45 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using ResumeChat.Rag.Completion;
 using ResumeChat.Rag.Models;
 
-namespace ResumeChat.Rag.Completion;
+namespace ResumeChat.Rag.Response;
 
-public sealed class OllamaCompletionProvider : CompletionProviderBase
+public sealed class OllamaResponseProvider : ResponseProviderBase
 {
     private readonly HttpClient _httpClient;
-    private readonly OllamaCompletionOptions _options;
+    private readonly OllamaResponseOptions _options;
+    private readonly CompletionSecurityOptions _security;
 
-    public OllamaCompletionProvider(
+    public OllamaResponseProvider(
         HttpClient httpClient,
-        IOptions<OllamaCompletionOptions> options,
+        IOptions<OllamaResponseOptions> options,
         IOptions<CompletionSecurityOptions> security,
-        ILogger<OllamaCompletionProvider> logger)
-        : base(security.Value, logger)
+        ILogger<OllamaResponseProvider> logger)
+        : base(logger)
     {
         _httpClient = httpClient;
         _options = options.Value;
+        _security = security.Value;
     }
 
     protected override string ProviderName => "Ollama";
     protected override string ModelName => _options.Model;
 
     protected override async IAsyncEnumerable<string> StreamTokensAsync(
-        string systemPrompt,
-        CompletionRequest request,
+        QueryPayload payload,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
+        var systemPrompt = SystemPromptBuilder.Build(payload, _security.Canary);
+
         var body = new
         {
             model = _options.Model,
             messages = new object[]
             {
                 new { role = "system", content = systemPrompt },
-                new { role = "user", content = request.UserMessage }
+                new { role = "user", content = payload.OriginalMessage }
             },
             stream = true
         };

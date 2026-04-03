@@ -4,4 +4,7 @@ public static class ChatResponses
 {
     public const string Unrelated =
         "I can only answer questions about Bryan's professional experience and technical skills.";
+
+    public const string ServerError =
+        "Something went wrong processing your request. Please try again.";
 }

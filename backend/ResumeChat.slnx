@@ -6,9 +6,12 @@
     <Project Path="src/ResumeChat.Corpus.Cli/ResumeChat.Corpus.Cli.csproj" />
     <Project Path="src/ResumeChat.Rag/ResumeChat.Rag.csproj" />
     <Project Path="src/ResumeChat.ServiceDefaults/ResumeChat.ServiceDefaults.csproj" />
+    <Project Path="src/ResumeChat.Storage/ResumeChat.Storage.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/ResumeChat.Api.Tests/ResumeChat.Api.Tests.csproj" />
+    <Project Path="tests/ResumeChat.Rag.Pipeline.Tests/ResumeChat.Rag.Pipeline.Tests.csproj" />
     <Project Path="tests/ResumeChat.Rag.Tests/ResumeChat.Rag.Tests.csproj" />
+    <Project Path="tests/ResumeChat.Storage.Tests/ResumeChat.Storage.Tests.csproj" />
   </Folder>
 </Solution>

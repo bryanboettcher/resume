@@ -3,22 +3,25 @@ using Anthropic;
 using Anthropic.Models.Messages;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using ResumeChat.Rag.Completion;
 using ResumeChat.Rag.Models;
 
-namespace ResumeChat.Rag.Completion;
+namespace ResumeChat.Rag.Response;
 
-public sealed class ClaudeCompletionProvider : CompletionProviderBase
+public sealed class ClaudeResponseProvider : ResponseProviderBase
 {
     private readonly AnthropicClient _client;
-    private readonly ClaudeCompletionOptions _options;
+    private readonly ClaudeResponseOptions _options;
+    private readonly CompletionSecurityOptions _security;
 
-    public ClaudeCompletionProvider(
-        IOptions<ClaudeCompletionOptions> options,
+    public ClaudeResponseProvider(
+        IOptions<ClaudeResponseOptions> options,
         IOptions<CompletionSecurityOptions> security,
-        ILogger<ClaudeCompletionProvider> logger)
-        : base(security.Value, logger)
+        ILogger<ClaudeResponseProvider> logger)
+        : base(logger)
     {
         _options = options.Value;
+        _security = security.Value;
         _client = new AnthropicClient { ApiKey = _options.ApiKey };
     }
 
@@ -26,16 +29,17 @@ public sealed class ClaudeCompletionProvider : CompletionProviderBase
     protected override string ModelName => _options.Model;
 
     protected override async IAsyncEnumerable<string> StreamTokensAsync(
-        string systemPrompt,
-        CompletionRequest request,
+        QueryPayload payload,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
+        var systemPrompt = SystemPromptBuilder.Build(payload, _security.Canary);
+
         var parameters = new MessageCreateParams
         {
             Model = _options.Model,
             MaxTokens = _options.MaxTokens,
             System = systemPrompt,
-            Messages = [new() { Role = "user", Content = request.UserMessage }]
+            Messages = [new() { Role = "user", Content = payload.OriginalMessage }]
         };
 
         await foreach (var evt in _client.Messages.CreateStreaming(parameters, cancellationToken)

@@ -86,6 +86,7 @@ public sealed class QdrantVectorStore : IVectorStore
     public async Task<IReadOnlyList<ScoredChunk>> SearchAsync(
         ReadOnlyMemory<float> queryEmbedding,
         int topK,
+        int? dimensions = null,
         CancellationToken cancellationToken = default)
     {
         using var activity = RagDiagnostics.ActivitySource.StartActivity("rag.vector_search");
@@ -93,11 +94,16 @@ public sealed class QdrantVectorStore : IVectorStore
 
         var startTimestamp = Stopwatch.GetTimestamp();
 
+        // When truncating, fetch more candidates from full-dim search, then re-rank
+        var fetchLimit = dimensions.HasValue ? Math.Max(topK * 4, 50) : topK;
+        var needVectors = dimensions.HasValue;
+
         var body = new
         {
             vector = queryEmbedding.ToArray(),
-            limit = topK,
-            with_payload = true
+            limit = fetchLimit,
+            with_payload = true,
+            with_vectors = needVectors
         };
 
         var url = $"{BaseUrl}/collections/{_options.CollectionName}/points/search";
@@ -114,30 +120,115 @@ public sealed class QdrantVectorStore : IVectorStore
             return [];
         }
 
+        IReadOnlyList<ScoredChunk> chunks;
+
+        if (dimensions.HasValue && dimensions.Value < queryEmbedding.Length)
+        {
+            var dims = dimensions.Value;
+            var truncQuery = TruncateAndNormalize(queryEmbedding.Span, dims);
+
+            activity?.SetTag("rag.search.truncated_dimensions", dims);
+            activity?.SetTag("rag.search.fetch_limit", fetchLimit);
+
+            chunks = result.Result
+                .Where(r => r.Vector is not null)
+                .Select(r =>
+                {
+                    var truncStored = TruncateAndNormalize(r.Vector.AsSpan(), dims);
+                    var cosine = CosineSimilarity(truncQuery, truncStored);
+                    return (Result: r, Score: cosine);
+                })
+                .OrderByDescending(x => x.Score)
+                .Take(topK)
+                .Select(x => ToScoredChunk(x.Result, x.Score))
+                .ToList();
+        }
+        else
+        {
+            chunks = result.Result
+                .Take(topK)
+                .Select(r => ToScoredChunk(r, r.Score))
+                .ToList();
+        }
+
         var elapsedMs = Stopwatch.GetElapsedTime(startTimestamp).TotalMilliseconds;
-        activity?.SetTag("rag.search.result_count", result.Result.Count);
-        activity?.SetTag("rag.search.top_score", result.Result.Count > 0 ? result.Result[0].Score : 0);
+        activity?.SetTag("rag.search.result_count", chunks.Count);
+        activity?.SetTag("rag.search.top_score", chunks.Count > 0 ? chunks[0].Score : 0);
         RagDiagnostics.VectorSearchDuration.Record(elapsedMs);
 
         _logger.LogDebug("Qdrant search returned {ResultCount} results in {ElapsedMs:F1}ms (top score: {TopScore:F4})",
-            result.Result.Count, elapsedMs, result.Result.Count > 0 ? result.Result[0].Score : 0);
+            chunks.Count, elapsedMs, chunks.Count > 0 ? chunks[0].Score : 0);
 
-        return result.Result.Select(r =>
+        return chunks;
+    }
+
+    private static ScoredChunk ToScoredChunk(QdrantSearchResult r, float score)
+    {
+        var payload = r.Payload;
+        var metadata = new DocumentMetadata(
+            GetString(payload, "source_file"),
+            GetStringOrNull(payload, "title"),
+            payload.TryGetValue("tags", out var tagsEl) ? DeserializeTags(tagsEl) : []);
+
+        var chunk = new DocumentChunk(
+            GetString(payload, "text"),
+            GetString(payload, "section_heading"),
+            payload.TryGetValue("chunk_index", out var idx) && idx.TryGetInt32(out var i) ? i : 0,
+            metadata);
+
+        return new ScoredChunk(chunk, score);
+    }
+
+    private static float[] TruncateAndNormalize(ReadOnlySpan<float> embedding, int dims)
+    {
+        var truncated = new float[dims];
+        embedding[..dims].CopyTo(truncated);
+
+        var sumSq = 0f;
+        for (var j = 0; j < truncated.Length; j++)
+            sumSq += truncated[j] * truncated[j];
+
+        var norm = MathF.Sqrt(sumSq);
+        if (norm > 0)
         {
-            var payload = r.Payload;
-            var metadata = new DocumentMetadata(
-                GetString(payload, "source_file"),
-                GetStringOrNull(payload, "title"),
-                payload.TryGetValue("tags", out var tagsEl) ? DeserializeTags(tagsEl) : []);
+            for (var j = 0; j < truncated.Length; j++)
+                truncated[j] /= norm;
+        }
 
-            var chunk = new DocumentChunk(
-                GetString(payload, "text"),
-                GetString(payload, "section_heading"),
-                payload.TryGetValue("chunk_index", out var idx) && idx.TryGetInt32(out var i) ? i : 0,
-                metadata);
+        return truncated;
+    }
 
-            return new ScoredChunk(chunk, r.Score);
-        }).ToList();
+    private static float CosineSimilarity(float[] a, float[] b)
+    {
+        var dot = 0f;
+        var normA = 0f;
+        var normB = 0f;
+        for (var j = 0; j < a.Length; j++)
+        {
+            dot += a[j] * b[j];
+            normA += a[j] * a[j];
+            normB += b[j] * b[j];
+        }
+
+        var denom = MathF.Sqrt(normA) * MathF.Sqrt(normB);
+        return denom > 0 ? dot / denom : 0;
+    }
+
+    public async Task<CollectionInfo> GetCollectionInfoAsync(CancellationToken cancellationToken = default)
+    {
+        var url = $"{BaseUrl}/collections/{_options.CollectionName}";
+        var response = await _httpClient.GetAsync(url, cancellationToken).ConfigureAwait(false);
+
+        if (!response.IsSuccessStatusCode)
+            return new CollectionInfo(_options.CollectionName, 0, 0);
+
+        var json = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken).ConfigureAwait(false);
+        var result = json.GetProperty("result");
+
+        var pointCount = result.GetProperty("points_count").GetInt64();
+        var vectorSize = result.GetProperty("config").GetProperty("params").GetProperty("vectors").GetProperty("size").GetInt32();
+
+        return new CollectionInfo(_options.CollectionName, pointCount, vectorSize);
     }
 
     private string BaseUrl => _options.BaseUrl.TrimEnd('/');
@@ -171,5 +262,6 @@ public sealed class QdrantVectorStore : IVectorStore
 
     private sealed record QdrantSearchResult(
         [property: JsonPropertyName("score")] float Score,
-        [property: JsonPropertyName("payload")] Dictionary<string, JsonElement> Payload);
+        [property: JsonPropertyName("payload")] Dictionary<string, JsonElement> Payload,
+        [property: JsonPropertyName("vector")] float[]? Vector = null);
 }
