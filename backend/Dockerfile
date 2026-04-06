@@ -7,9 +7,13 @@ COPY src/ResumeChat.ServiceDefaults/ResumeChat.ServiceDefaults.csproj src/Resume
 COPY src/ResumeChat.Storage/ResumeChat.Storage.csproj src/ResumeChat.Storage/
 COPY tests/ResumeChat.Api.Tests/ResumeChat.Api.Tests.csproj tests/ResumeChat.Api.Tests/
 COPY tests/ResumeChat.Rag.Tests/ResumeChat.Rag.Tests.csproj tests/ResumeChat.Rag.Tests/
+COPY tests/ResumeChat.Rag.Pipeline.Tests/ResumeChat.Rag.Pipeline.Tests.csproj tests/ResumeChat.Rag.Pipeline.Tests/
+COPY tests/ResumeChat.Storage.Tests/ResumeChat.Storage.Tests.csproj tests/ResumeChat.Storage.Tests/
 RUN dotnet restore src/ResumeChat.Api/ResumeChat.Api.csproj
 RUN dotnet restore tests/ResumeChat.Api.Tests/ResumeChat.Api.Tests.csproj
 RUN dotnet restore tests/ResumeChat.Rag.Tests/ResumeChat.Rag.Tests.csproj
+RUN dotnet restore tests/ResumeChat.Rag.Pipeline.Tests/ResumeChat.Rag.Pipeline.Tests.csproj
+RUN dotnet restore tests/ResumeChat.Storage.Tests/ResumeChat.Storage.Tests.csproj
 
 COPY src/ResumeChat.Api/ src/ResumeChat.Api/
 COPY src/ResumeChat.Rag/ src/ResumeChat.Rag/
@@ -18,6 +22,8 @@ COPY src/ResumeChat.Storage/ src/ResumeChat.Storage/
 COPY tests/ tests/
 RUN dotnet test tests/ResumeChat.Api.Tests/ --no-restore --verbosity quiet
 RUN dotnet test tests/ResumeChat.Rag.Tests/ --no-restore --verbosity quiet
+RUN dotnet test tests/ResumeChat.Rag.Pipeline.Tests/ --no-restore --verbosity quiet
+RUN dotnet test tests/ResumeChat.Storage.Tests/ --no-restore --verbosity quiet
 RUN dotnet publish src/ResumeChat.Api -c Release -o /app --no-restore
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime

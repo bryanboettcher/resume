@@ -88,6 +88,47 @@ public sealed class CorpusSyncService
         _logger.LogInformation("Corpus sync complete: {Synced} synced, {Skipped} skipped", synced, skipped);
     }
 
+    public async Task<SyncProgress> UpsertDocumentAsync(
+        string sourcePath,
+        string content,
+        CancellationToken ct = default)
+    {
+        var contentHash = ComputeContentHash(content);
+
+        var existing = await _repository.GetDocumentByPathAsync(sourcePath, ct).ConfigureAwait(false);
+        if (existing is not null && existing.ContentHash == contentHash)
+            return new SyncProgress("skipped", sourcePath, Skipped: true, ChunkCount: existing.Chunks.Count);
+
+        var title = ExtractTitle(content);
+        var tags = ExtractTags(content);
+        var metadata = new DocumentMetadata(sourcePath, title, tags);
+        var chunks = _chunker.Chunk(content, metadata);
+
+        var document = new CorpusDocumentEntity
+        {
+            SourceFile = sourcePath,
+            Title = title,
+            ContentText = content,
+            ContentHash = contentHash,
+            Tags = [.. tags],
+            LastModified = DateTimeOffset.UtcNow
+        };
+
+        var chunkEntities = chunks
+            .Select(c => new CorpusChunkEntity
+            {
+                ChunkIndex = c.ChunkIndex,
+                SectionHeading = c.SectionHeading ?? string.Empty,
+                ChunkText = c.Text
+            })
+            .ToList();
+
+        await _repository.UpsertDocumentAsync(document, chunkEntities, ct).ConfigureAwait(false);
+
+        _logger.LogDebug("Upserted {FilePath}: {ChunkCount} chunks", sourcePath, chunkEntities.Count);
+        return new SyncProgress("synced", sourcePath, Skipped: false, ChunkCount: chunkEntities.Count);
+    }
+
     private static string ComputeContentHash(string content)
     {
         var bytes = Encoding.UTF8.GetBytes(content);

@@ -5,21 +5,38 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ResumeChat Admin</title>
 <style>
-  :root { --bg: #1a1a2e; --surface: #16213e; --border: #0f3460; --text: #e0e0e0; --muted: #888; --accent: #e94560; --green: #4ecca3; --blue: #7ec8e3; }
+  :root { --bg: #1a1a2e; --surface: #16213e; --border: #0f3460; --text: #e0e0e0; --muted: #888; --accent: #e94560; --green: #4ecca3; --blue: #7ec8e3; --yellow: #e9a045; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); padding: 1rem; max-width: 1200px; margin: 0 auto; }
   h1 { font-size: 1.4rem; margin-bottom: 1rem; color: var(--blue); }
   h2 { font-size: 1.1rem; margin-bottom: 0.5rem; color: var(--muted); }
-  .controls { display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; align-items: center; }
-  input, select { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 0.4rem 0.6rem; border-radius: 4px; font-size: 0.85rem; }
-  input:focus { outline: 1px solid var(--blue); }
+  h3 { font-size: 0.95rem; margin-bottom: 0.5rem; color: var(--text); }
+  .top-controls { display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; align-items: center; }
+  input, select, textarea { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 0.4rem 0.6rem; border-radius: 4px; font-size: 0.85rem; }
+  input:focus, textarea:focus { outline: 1px solid var(--blue); }
+  textarea { font-family: 'Consolas', 'Courier New', monospace; resize: vertical; }
   button { background: var(--border); color: var(--text); border: none; padding: 0.4rem 0.8rem; border-radius: 4px; cursor: pointer; font-size: 0.85rem; }
   button:hover { background: var(--accent); }
   button.danger { background: var(--accent); }
-  button.warn { background: #e9a045; color: #000; }
+  button.warn { background: var(--yellow); color: #000; }
+  button.primary { background: var(--blue); color: #000; }
+  button:disabled { opacity: 0.5; cursor: default; }
+  button:disabled:hover { background: var(--border); }
+
+  /* Tab bar */
+  .tab-bar { display: flex; gap: 0; margin-bottom: 1rem; border-bottom: 2px solid var(--border); }
+  .tab-btn { background: none; color: var(--muted); border: none; border-bottom: 2px solid transparent; padding: 0.5rem 1.2rem; cursor: pointer; font-size: 0.9rem; margin-bottom: -2px; border-radius: 0; }
+  .tab-btn:hover { color: var(--text); background: none; }
+  .tab-btn.active { color: var(--blue); border-bottom-color: var(--blue); }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* Status bar */
   .status-bar { display: flex; gap: 1rem; margin-bottom: 1rem; padding: 0.5rem; background: var(--surface); border-radius: 4px; font-size: 0.8rem; color: var(--muted); flex-wrap: wrap; }
   .status-bar span { white-space: nowrap; }
   .status-bar .val { color: var(--green); }
+
+  /* Tables */
   table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
   th { text-align: left; padding: 0.4rem; border-bottom: 2px solid var(--border); color: var(--muted); font-weight: 600; position: sticky; top: 0; background: var(--bg); }
   td { padding: 0.4rem; border-bottom: 1px solid var(--border); vertical-align: top; max-width: 300px; }
@@ -27,64 +44,239 @@
   td.response { max-width: 400px; white-space: pre-wrap; word-break: break-word; }
   td.num { text-align: right; font-variant-numeric: tabular-nums; }
   tr:hover { background: var(--surface); }
+  tr.clickable { cursor: pointer; }
+
+  /* Badges */
   .badge { display: inline-block; padding: 0.1rem 0.4rem; border-radius: 3px; font-size: 0.75rem; }
   .badge.threat { background: var(--accent); color: #fff; }
   .badge.cache { background: var(--green); color: #000; }
   .badge.expired { background: var(--muted); color: #000; }
+  .badge.tag { background: var(--border); color: var(--blue); }
+
+  /* Actions */
   .actions { display: flex; gap: 0.3rem; }
+
+  /* Controls row */
+  .controls { display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; align-items: center; }
+
+  /* Truncate */
+  .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* Modals */
   .detail-modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: none; align-items: center; justify-content: center; z-index: 10; }
   .detail-modal.open { display: flex; }
-  .detail-content { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; max-width: 800px; width: 90%; max-height: 80vh; overflow-y: auto; }
-  .detail-content pre { background: var(--bg); padding: 0.5rem; border-radius: 4px; overflow-x: auto; font-size: 0.8rem; white-space: pre-wrap; }
+  .detail-content { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; max-width: 860px; width: 90%; max-height: 85vh; overflow-y: auto; }
+  .detail-content pre { background: var(--bg); padding: 0.5rem; border-radius: 4px; overflow-x: auto; font-size: 0.8rem; white-space: pre-wrap; word-break: break-word; }
   .detail-content dt { color: var(--muted); font-size: 0.8rem; margin-top: 0.5rem; }
   .detail-content dd { margin-bottom: 0.5rem; }
-  .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* Corpus upload form */
+  .corpus-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; }
+  @media (max-width: 700px) { .corpus-grid { grid-template-columns: 1fr; } }
+  .form-group { display: flex; flex-direction: column; gap: 0.4rem; }
+  .form-group label { font-size: 0.82rem; color: var(--muted); }
+  .form-group input, .form-group textarea { width: 100%; }
+
+  /* Ingest log */
+  .log-area { background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 0.6rem; font-family: 'Consolas', 'Courier New', monospace; font-size: 0.78rem; min-height: 80px; max-height: 260px; overflow-y: auto; color: var(--green); white-space: pre-wrap; word-break: break-word; }
+  .log-area .log-err { color: var(--accent); }
+  .log-area .log-done { color: var(--blue); font-weight: bold; }
+
+  /* Copy box */
+  .copy-block { position: relative; margin: 0.5rem 0; }
+  .copy-block pre { background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 0.6rem; font-size: 0.75rem; overflow-x: auto; white-space: pre; }
+  .copy-btn { position: absolute; top: 0.3rem; right: 0.3rem; padding: 0.2rem 0.5rem; font-size: 0.7rem; }
+
+  /* Section card */
+  .section-card { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; margin-bottom: 1rem; }
+  .section-card h3 { margin-bottom: 0.75rem; color: var(--blue); font-size: 0.95rem; border-bottom: 1px solid var(--border); padding-bottom: 0.4rem; }
+
+  /* Chunk list in corpus detail */
+  .chunk-item { border: 1px solid var(--border); border-radius: 4px; padding: 0.5rem; margin-bottom: 0.5rem; font-size: 0.8rem; }
+  .chunk-item .chunk-heading { color: var(--blue); font-weight: 600; margin-bottom: 0.2rem; font-size: 0.78rem; }
+  .chunk-item .chunk-preview { color: var(--muted); white-space: pre-wrap; word-break: break-word; }
+  .chunk-index { display: inline-block; background: var(--border); color: var(--muted); border-radius: 3px; padding: 0.05rem 0.3rem; font-size: 0.7rem; margin-right: 0.3rem; }
+
+  /* Result message */
+  .result-msg { padding: 0.5rem 0.75rem; border-radius: 4px; font-size: 0.85rem; margin-top: 0.5rem; display: none; }
+  .result-msg.ok { background: rgba(78,204,163,0.15); border: 1px solid var(--green); color: var(--green); display: block; }
+  .result-msg.err { background: rgba(233,69,96,0.15); border: 1px solid var(--accent); color: var(--accent); display: block; }
 </style>
 </head>
 <body>
 <h1>ResumeChat Admin</h1>
 
-<div class="controls">
+<div class="top-controls">
   <label>API Key: <input type="password" id="apiKey" value="abc123" size="16"></label>
-  <label>Search: <input type="text" id="searchQuery" placeholder="search queries/responses..." size="30"></label>
-  <label>Limit: <input type="number" id="limit" value="20" min="1" max="100" size="4"></label>
-  <button onclick="loadInteractions()">Refresh</button>
-  <button onclick="loadStatus()">Status</button>
 </div>
 
-<div class="status-bar" id="statusBar">
-  <span>Corpus: <span class="val" id="statDocs">-</span> docs, <span class="val" id="statChunks">-</span> chunks</span>
-  <span>Vectors: <span class="val" id="statPoints">-</span> points (<span class="val" id="statDims">-</span>d)</span>
-  <span>Provider: <span class="val" id="statProvider">-</span></span>
-  <span>Cache: <span class="val" id="statCache">-</span></span>
+<div class="tab-bar">
+  <button class="tab-btn active" onclick="switchTab('interactions')">Interactions</button>
+  <button class="tab-btn" onclick="switchTab('corpus')">Corpus</button>
 </div>
 
-<table>
-  <thead>
-    <tr>
-      <th>ID</th>
-      <th>Time</th>
-      <th>Query</th>
-      <th>Response</th>
-      <th>Score</th>
-      <th>Ms</th>
-      <th>Flags</th>
-      <th>Actions</th>
-    </tr>
-  </thead>
-  <tbody id="tableBody"></tbody>
-</table>
+<!-- ===================== INTERACTIONS TAB ===================== -->
+<div class="tab-panel active" id="tab-interactions">
 
-<div class="detail-modal" id="detailModal" onclick="if(event.target===this)closeDetail()">
+  <div class="controls">
+    <label>Search: <input type="text" id="searchQuery" placeholder="search queries/responses..." size="30"></label>
+    <label>Limit: <input type="number" id="limit" value="20" min="1" max="100" size="4"></label>
+    <button onclick="loadInteractions()">Refresh</button>
+    <button onclick="loadStatus()">Status</button>
+  </div>
+
+  <div class="status-bar" id="statusBar">
+    <span>Corpus: <span class="val" id="statDocs">-</span> docs, <span class="val" id="statChunks">-</span> chunks</span>
+    <span>Vectors: <span class="val" id="statPoints">-</span> points (<span class="val" id="statDims">-</span>d)</span>
+    <span>Provider: <span class="val" id="statProvider">-</span></span>
+    <span>Cache: <span class="val" id="statCache">-</span></span>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Time</th>
+        <th>Query</th>
+        <th>Response</th>
+        <th>Score</th>
+        <th>Ms</th>
+        <th>Flags</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody id="tableBody"></tbody>
+  </table>
+
+</div>
+
+<!-- ===================== CORPUS TAB ===================== -->
+<div class="tab-panel" id="tab-corpus">
+
+  <!-- Document list -->
+  <div class="section-card">
+    <h3>Corpus Documents</h3>
+    <div class="controls">
+      <button onclick="loadCorpus()">Refresh</button>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Source File</th>
+          <th>Title</th>
+          <th>Tags</th>
+          <th style="text-align:right">Chunks</th>
+          <th>Last Modified</th>
+        </tr>
+      </thead>
+      <tbody id="corpusTableBody"></tbody>
+    </table>
+  </div>
+
+  <!-- Upload document -->
+  <div class="section-card">
+    <h3>Upload Document</h3>
+    <div class="corpus-grid">
+      <div class="form-group">
+        <label for="uploadSourcePath">Source Path (e.g. evidence/my-new-doc.md)</label>
+        <input type="text" id="uploadSourcePath" placeholder="evidence/my-new-doc.md">
+      </div>
+      <div style="display:flex;align-items:flex-end">
+        <button class="primary" onclick="uploadDocument()">Upload</button>
+      </div>
+    </div>
+    <div class="form-group">
+      <label for="uploadContent">Content (Markdown)</label>
+      <textarea id="uploadContent" rows="10" placeholder="Paste markdown content here..."></textarea>
+    </div>
+    <div id="uploadResult" class="result-msg"></div>
+  </div>
+
+  <!-- Bulk push reference -->
+  <div class="section-card">
+    <h3>Bulk Push from Local Checkout</h3>
+    <p style="font-size:0.85rem;color:var(--muted);margin-bottom:0.75rem">
+      The browser cannot read local files directly. Use this shell script from your git checkout to push all corpus files to the API:
+    </p>
+    <div class="copy-block">
+      <pre id="pushScript">#!/usr/bin/env bash
+# Run from the root of your git checkout
+API_URL="https://resume-chat.mallcop.dev/api/admin/corpus"
+API_KEY="YOUR_KEY"
+
+find evidence projects links -name '*.md' | while read -r file; do
+  echo "Pushing: $file"
+  curl -s -X POST "$API_URL" \
+    -H "X-Api-Key: $API_KEY" \
+    -H "Content-Type: application/json" \
+    -d "$(jq -n --arg path "$file" --rawfile content "$file" \
+      '{sourcePath: $path, content: $content, embed: false}')"
+  echo
+done</pre>
+      <button class="copy-btn" onclick="copyScript()">Copy</button>
+    </div>
+  </div>
+
+  <!-- Trigger ingest -->
+  <div class="section-card">
+    <h3>Re-ingest to Qdrant</h3>
+    <p style="font-size:0.85rem;color:var(--muted);margin-bottom:0.75rem">
+      Triggers the ingestion pipeline: reads corpus documents, chunks them, embeds, and upserts into Qdrant.
+    </p>
+    <div class="controls">
+      <button class="primary" id="ingestBtn" onclick="triggerIngest()">Re-ingest to Qdrant</button>
+    </div>
+    <div class="log-area" id="ingestLog" style="display:none"></div>
+  </div>
+
+</div>
+
+<!-- ===================== SHARED MODALS ===================== -->
+
+<!-- Interaction detail modal -->
+<div class="detail-modal" id="detailModal" onclick="if(event.target===this)closeModal('detailModal')">
   <div class="detail-content" id="detailContent"></div>
+</div>
+
+<!-- Corpus document detail modal -->
+<div class="detail-modal" id="corpusModal" onclick="if(event.target===this)closeModal('corpusModal')">
+  <div class="detail-content" id="corpusContent"></div>
 </div>
 
 <script>
 const $ = id => document.getElementById(id);
 const api = (path, opts = {}) => {
   const key = $('apiKey').value;
-  return fetch(path, { ...opts, headers: { 'X-Api-Key': key, ...opts.headers } });
+  return fetch(path, { ...opts, headers: { 'X-Api-Key': key, 'Content-Type': 'application/json', ...opts.headers } });
 };
+
+// ---- Tab switching ----
+
+function switchTab(name) {
+  document.querySelectorAll('.tab-panel').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+  $(`tab-${name}`).classList.add('active');
+  document.querySelectorAll('.tab-btn').forEach(el => {
+    if (el.textContent.toLowerCase() === name || el.getAttribute('onclick')?.includes(name)) {
+      el.classList.add('active');
+    }
+  });
+  if (name === 'corpus') loadCorpus();
+}
+
+// ---- Modal helpers ----
+
+function closeModal(id) { $(id).classList.remove('open'); }
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    closeModal('detailModal');
+    closeModal('corpusModal');
+  }
+});
+
+// ---- Interactions tab ----
 
 async function loadStatus() {
   try {
@@ -93,7 +285,8 @@ async function loadStatus() {
     $('statPoints').textContent = d.vectorStore?.pointCount ?? '-';
     $('statDims').textContent = d.vectorStore?.vectorDimensions ?? '-';
     $('statProvider').textContent = d.pipeline?.completionProvider ?? '-';
-    $('statCache').textContent = d.pipeline?.dimensionPolicy?.defaultDimensions ? d.pipeline.dimensionPolicy.defaultDimensions + 'd' : 'full';
+    $('statCache').textContent = d.pipeline?.dimensionPolicy?.defaultDimensions
+      ? d.pipeline.dimensionPolicy.defaultDimensions + 'd' : 'full';
     $('statDocs').textContent = d.corpus?.directoryExists ? 'ok' : 'missing';
     $('statChunks').textContent = '-';
   } catch(e) { console.error(e); }
@@ -109,7 +302,10 @@ async function loadInteractions() {
     const r = await api(url);
     const data = await r.json();
     renderTable(data);
-  } catch(e) { console.error(e); $('tableBody').innerHTML = `<tr><td colspan="8">Error: ${e.message}</td></tr>`; }
+  } catch(e) {
+    console.error(e);
+    $('tableBody').innerHTML = `<tr><td colspan="8">Error: ${e.message}</td></tr>`;
+  }
 }
 
 function renderTable(rows) {
@@ -132,7 +328,7 @@ function renderTable(rows) {
       <td class="num">${ms}</td>
       <td>${flags.join(' ')}</td>
       <td class="actions">
-        <button onclick="showDetail(${r.id})">view</button>
+        <button onclick="showInteractionDetail(${r.id})">view</button>
         <button class="warn" onclick="expireInteraction(${r.id})">expire</button>
         <button class="danger" onclick="purgeInteraction(${r.id})">purge</button>
       </td>
@@ -148,7 +344,7 @@ function parseTopScore(docsJson) {
   } catch { return '-'; }
 }
 
-async function showDetail(id) {
+async function showInteractionDetail(id) {
   const r = await api(`/api/admin/interactions/${id}`);
   if (!r.ok) return;
   const d = await r.json();
@@ -170,15 +366,13 @@ async function showDetail(id) {
       <dt>Created</dt><dd>${new Date(d.createdAt).toLocaleString()}</dd>
     </dl>
     <div style="margin-top:1rem;display:flex;gap:0.5rem">
-      <button class="warn" onclick="expireInteraction(${d.id});closeDetail()">Expire</button>
-      <button class="danger" onclick="purgeInteraction(${d.id});closeDetail()">Purge</button>
-      <button onclick="closeDetail()">Close</button>
+      <button class="warn" onclick="expireInteraction(${d.id});closeModal('detailModal')">Expire</button>
+      <button class="danger" onclick="purgeInteraction(${d.id});closeModal('detailModal')">Purge</button>
+      <button onclick="closeModal('detailModal')">Close</button>
     </div>
   `;
   $('detailModal').classList.add('open');
 }
-
-function closeDetail() { $('detailModal').classList.remove('open'); }
 
 async function expireInteraction(id) {
   if (!confirm(`Expire interaction #${id}? It will no longer be returned as a cache hit.`)) return;
@@ -192,9 +386,193 @@ async function purgeInteraction(id) {
   loadInteractions();
 }
 
-function esc(s) { const d = document.createElement('div'); d.textContent = s ?? ''; return d.innerHTML; }
+// ---- Corpus tab ----
 
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDetail(); });
+async function loadCorpus() {
+  $('corpusTableBody').innerHTML = `<tr><td colspan="6" style="color:var(--muted)">Loading...</td></tr>`;
+  try {
+    const r = await api('/api/admin/corpus');
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const docs = await r.json();
+    renderCorpusTable(docs);
+  } catch(e) {
+    console.error(e);
+    $('corpusTableBody').innerHTML = `<tr><td colspan="6" style="color:var(--accent)">Error: ${esc(e.message)}</td></tr>`;
+  }
+}
+
+function renderCorpusTable(docs) {
+  if (!docs.length) {
+    $('corpusTableBody').innerHTML = `<tr><td colspan="6" style="color:var(--muted)">No documents in corpus.</td></tr>`;
+    return;
+  }
+  $('corpusTableBody').innerHTML = docs.map(d => {
+    const tags = (d.tags || []).map(t => `<span class="badge tag">${esc(t)}</span>`).join(' ');
+    const modified = d.lastModified ? new Date(d.lastModified).toLocaleDateString() : '-';
+    return `<tr class="clickable" onclick="showCorpusDetail('${esc(d.id)}')">
+      <td>${d.id}</td>
+      <td class="truncate" style="max-width:200px;color:var(--blue)">${esc(d.sourceFile)}</td>
+      <td class="truncate" style="max-width:200px">${esc(d.title || '')}</td>
+      <td style="max-width:200px">${tags}</td>
+      <td class="num">${d.chunkCount ?? '-'}</td>
+      <td>${modified}</td>
+    </tr>`;
+  }).join('');
+}
+
+async function showCorpusDetail(id) {
+  $('corpusContent').innerHTML = `<p style="color:var(--muted)">Loading...</p>`;
+  $('corpusModal').classList.add('open');
+  try {
+    const r = await api(`/api/admin/corpus/${encodeURIComponent(id)}`);
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const d = await r.json();
+    const tags = (d.tags || []).map(t => `<span class="badge tag">${esc(t)}</span>`).join(' ');
+    const chunks = (d.chunks || []).map((c, i) =>
+      `<div class="chunk-item">
+        <div class="chunk-heading"><span class="chunk-index">#${c.chunkIndex ?? i}</span>${esc(c.sectionHeading || '(no heading)')}</div>
+        <div class="chunk-preview">${esc((c.text || '').substring(0, 300))}${(c.text || '').length > 300 ? '…' : ''}</div>
+      </div>`
+    ).join('');
+    $('corpusContent').innerHTML = `
+      <h2 style="margin-bottom:0.75rem">${esc(d.title || d.sourceFile)}</h2>
+      <dl>
+        <dt>Source File</dt><dd style="color:var(--blue)">${esc(d.sourceFile)}</dd>
+        <dt>Tags</dt><dd>${tags || '<em style="color:var(--muted)">none</em>'}</dd>
+        <dt>Content Hash</dt><dd><code style="font-size:0.78rem">${esc(d.contentHash || '-')}</code></dd>
+        <dt>Last Modified</dt><dd>${d.lastModified ? new Date(d.lastModified).toLocaleString() : '-'}</dd>
+        <dt>Chunk Count</dt><dd>${d.chunkCount ?? (d.chunks?.length ?? '-')}</dd>
+      </dl>
+      ${d.contentText ? `<details style="margin:0.75rem 0"><summary style="cursor:pointer;color:var(--muted);font-size:0.85rem">Full Content</summary><pre style="margin-top:0.5rem">${esc(d.contentText)}</pre></details>` : ''}
+      <div style="margin-top:0.75rem">
+        <h3 style="font-size:0.9rem;margin-bottom:0.5rem;color:var(--muted)">Chunks (${d.chunks?.length ?? 0})</h3>
+        ${chunks || '<p style="color:var(--muted);font-size:0.85rem">No chunks available.</p>'}
+      </div>
+      <div style="margin-top:1rem">
+        <button onclick="closeModal('corpusModal')">Close</button>
+      </div>
+    `;
+  } catch(e) {
+    $('corpusContent').innerHTML = `<p style="color:var(--accent)">Error: ${esc(e.message)}</p><div style="margin-top:1rem"><button onclick="closeModal('corpusModal')">Close</button></div>`;
+  }
+}
+
+async function uploadDocument() {
+  const sourcePath = $('uploadSourcePath').value.trim();
+  const content = $('uploadContent').value;
+  const resultEl = $('uploadResult');
+  resultEl.className = 'result-msg';
+  resultEl.textContent = '';
+
+  if (!sourcePath) { showResult(resultEl, 'err', 'Source path is required.'); return; }
+  if (!content.trim()) { showResult(resultEl, 'err', 'Content is required.'); return; }
+
+  try {
+    const r = await api('/api/admin/corpus', {
+      method: 'POST',
+      body: JSON.stringify({ sourcePath, content, embed: true })
+    });
+    const body = await r.json().catch(() => null);
+    if (!r.ok) {
+      showResult(resultEl, 'err', `HTTP ${r.status}: ${body?.message || body?.title || 'Unknown error'}`);
+      return;
+    }
+    const skipped = body?.skipped ? ' (skipped — content unchanged)' : '';
+    const chunkCount = body?.chunkCount != null ? `, ${body.chunkCount} chunks` : '';
+    const embedded = body?.embedded ? `, ${body.embedded} embedded` : '';
+    showResult(resultEl, 'ok', `Uploaded: ${body?.sourceFile || sourcePath}${chunkCount}${embedded}${skipped}`);
+    loadCorpus();
+  } catch(e) {
+    showResult(resultEl, 'err', `Request failed: ${e.message}`);
+  }
+}
+
+function showResult(el, type, msg) {
+  el.className = `result-msg ${type}`;
+  el.textContent = msg;
+}
+
+async function triggerIngest() {
+  const logEl = $('ingestLog');
+  const btn = $('ingestBtn');
+  logEl.style.display = 'block';
+  logEl.textContent = '';
+  btn.disabled = true;
+  btn.textContent = 'Ingesting...';
+
+  const appendLog = (text, cls) => {
+    const line = document.createElement('div');
+    if (cls) line.className = cls;
+    line.textContent = text;
+    logEl.appendChild(line);
+    logEl.scrollTop = logEl.scrollHeight;
+  };
+
+  try {
+    const r = await api('/api/admin/ingest', { method: 'POST', headers: { 'Accept': 'text/event-stream' } });
+    if (!r.ok) {
+      appendLog(`HTTP ${r.status}: request failed`, 'log-err');
+      return;
+    }
+
+    const reader = r.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const parts = buffer.split('\n\n');
+      buffer = parts.pop();
+      for (const part of parts) {
+        for (const line of part.split('\n')) {
+          if (line.startsWith('data: ')) {
+            const data = line.slice(6);
+            if (data === '[DONE]') {
+              appendLog('--- ingestion complete ---', 'log-done');
+            } else {
+              appendLog(data);
+            }
+          }
+        }
+      }
+    }
+    if (buffer.includes('data: ')) {
+      const data = buffer.slice(buffer.indexOf('data: ') + 6).trim();
+      if (data && data !== '[DONE]') appendLog(data);
+    }
+  } catch(e) {
+    appendLog(`Error: ${e.message}`, 'log-err');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Re-ingest to Qdrant';
+    loadStatus();
+  }
+}
+
+function copyScript() {
+  const text = $('pushScript').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.querySelector('.copy-btn');
+    const orig = btn.textContent;
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = orig, 1500);
+  }).catch(() => {
+    alert('Copy failed — select the text manually.');
+  });
+}
+
+// ---- Shared utilities ----
+
+function esc(s) {
+  const d = document.createElement('div');
+  d.textContent = s ?? '';
+  return d.innerHTML;
+}
+
+// ---- Init ----
+
 $('searchQuery').addEventListener('keydown', e => { if (e.key === 'Enter') loadInteractions(); });
 
 loadStatus();

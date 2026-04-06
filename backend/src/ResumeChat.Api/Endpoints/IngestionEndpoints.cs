@@ -21,12 +21,14 @@ public static class IngestionEndpoints
 
     private static async Task<IResult> HandleIngest(
         IngestionService ingestion,
+        IIngestionPipeline pipeline,
         IOptions<CorpusOptions> corpusOptions,
         HttpContext context,
         CancellationToken ct)
     {
         var corpusDir = corpusOptions.Value.Directory;
-        if (!Directory.Exists(corpusDir))
+        var isDbBacked = pipeline is not Rag.Ingestion.CorpusIngestionPipeline;
+        if (!isDbBacked && !Directory.Exists(corpusDir))
             return Results.Problem($"Corpus directory not found: {corpusDir}", statusCode: 500);
 
         context.Response.ContentType = "text/event-stream";

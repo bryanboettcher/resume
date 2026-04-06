@@ -63,6 +63,6 @@ public sealed class DefaultQueryTransformer : IQueryTransformer
         _logger.LogInformation("Transformed query: {OriginalMessage} → {ProcessedMessage}, retrieved {DocumentCount} documents",
             query.OriginalMessage, query.ProcessedMessage, documents.Count);
 
-        return QueryPayload.FromQuery(query, documents);
+        return QueryPayload.FromQuery(query, documents, request.History);
     }
 }

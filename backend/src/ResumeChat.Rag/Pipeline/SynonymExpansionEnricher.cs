@@ -53,6 +53,10 @@ public sealed partial class SynonymExpansionEnricher : IQueryEnricher
         // Testing
         (Testing(), "testing NUnit integration-tests WebApplicationFactory Aspire test infrastructure"),
 
+        // E-commerce / storefront
+        (Ecommerce(), "KbStore KbClient ecommerce storefront product catalog inventory Angular domain-driven"),
+        (Storefront(), "KbStore ecommerce storefront product catalog inventory checkout"),
+
         // Migration / modernization
         (LegacyMigration(), "database migration schema migration zero-downtime rename pattern dual deployment historical seeding"),
         (Modernization(), "migration refactoring architecture distributed systems event-driven MassTransit"),
@@ -198,6 +202,14 @@ public sealed partial class SynonymExpansionEnricher : IQueryEnricher
 
     [GeneratedRegex(@"\b(testing|test\s*strategy|unit\s*tests?|integration\s*tests?)\b", RegexOptions.IgnoreCase)]
     private static partial Regex Testing();
+
+    // ── E-commerce / storefront ─────────────────────────────────────────────
+
+    [GeneratedRegex(@"\b(e[\s-]*commerce|online\s*store|shopping\s*cart|checkout)\b", RegexOptions.IgnoreCase)]
+    private static partial Regex Ecommerce();
+
+    [GeneratedRegex(@"\b(storefront|product\s*catalog|inventory\s*management)\b", RegexOptions.IgnoreCase)]
+    private static partial Regex Storefront();
 
     // ── Migration / modernization ─────────────────────────────────────────────
 

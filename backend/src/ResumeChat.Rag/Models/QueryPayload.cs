@@ -5,6 +5,7 @@ public sealed record QueryPayload
     public required string OriginalMessage { get; init; }
     public required string ProcessedMessage { get; init; }
     public required IReadOnlyList<ScoredChunk> Documents { get; init; }
+    public IReadOnlyList<ChatExchange>? History { get; init; }
     public bool IsThreat { get; init; }
     public int ThreatScore { get; init; }
 
@@ -17,11 +18,12 @@ public sealed record QueryPayload
         ThreatScore = threatScore
     };
 
-    public static QueryPayload FromQuery(ChatQuery query, IReadOnlyList<ScoredChunk> documents) => new()
+    public static QueryPayload FromQuery(ChatQuery query, IReadOnlyList<ScoredChunk> documents, IReadOnlyList<ChatExchange>? history = null) => new()
     {
         OriginalMessage = query.OriginalMessage,
         ProcessedMessage = query.ProcessedMessage,
         Documents = documents,
+        History = history,
         IsThreat = false,
         ThreatScore = 0
     };

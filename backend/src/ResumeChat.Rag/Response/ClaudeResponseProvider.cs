@@ -34,12 +34,23 @@ public sealed class ClaudeResponseProvider : ResponseProviderBase
     {
         var systemPrompt = SystemPromptBuilder.Build(payload, _security.Canary);
 
+        var messages = new List<MessageParam>();
+        if (payload.History is { Count: > 0 })
+        {
+            foreach (var exchange in payload.History)
+            {
+                messages.Add(new() { Role = "user", Content = exchange.Prompt });
+                messages.Add(new() { Role = "assistant", Content = exchange.Response });
+            }
+        }
+        messages.Add(new() { Role = "user", Content = payload.OriginalMessage });
+
         var parameters = new MessageCreateParams
         {
             Model = _options.Model,
             MaxTokens = _options.MaxTokens,
             System = systemPrompt,
-            Messages = [new() { Role = "user", Content = payload.OriginalMessage }]
+            Messages = messages
         };
 
         await foreach (var evt in _client.Messages.CreateStreaming(parameters, cancellationToken)

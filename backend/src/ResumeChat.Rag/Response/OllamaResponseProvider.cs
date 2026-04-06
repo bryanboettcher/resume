@@ -36,14 +36,21 @@ public sealed class OllamaResponseProvider : ResponseProviderBase
     {
         var systemPrompt = SystemPromptBuilder.Build(payload, _security.Canary);
 
+        var messages = new List<object> { new { role = "system", content = systemPrompt } };
+        if (payload.History is { Count: > 0 })
+        {
+            foreach (var exchange in payload.History)
+            {
+                messages.Add(new { role = "user", content = exchange.Prompt });
+                messages.Add(new { role = "assistant", content = exchange.Response });
+            }
+        }
+        messages.Add(new { role = "user", content = payload.OriginalMessage });
+
         var body = new
         {
             model = _options.Model,
-            messages = new object[]
-            {
-                new { role = "system", content = systemPrompt },
-                new { role = "user", content = payload.OriginalMessage }
-            },
+            messages,
             stream = true
         };
 

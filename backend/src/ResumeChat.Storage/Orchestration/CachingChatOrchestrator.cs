@@ -50,7 +50,7 @@ public sealed class CachingChatOrchestrator : IChatOrchestrator
         if (threat.IsThreat)
         {
             _logger.LogWarning("Threat detected (score {Score}) for query hash {Hash}",
-                threat.ThreatScore, QueryHasher.Compute(request.Message));
+                threat.ThreatScore, QueryHasher.Compute(request.Message, request.History));
 
             await _interactions.LogInteractionAsync(new InteractionEntity
             {
@@ -60,7 +60,7 @@ public sealed class CachingChatOrchestrator : IChatOrchestrator
                 RetrievedDocuments = "[]",
                 Provider = "None",
                 ModelName = "None",
-                QueryHash = QueryHasher.Compute(request.Message),
+                QueryHash = QueryHasher.Compute(request.Message, request.History),
                 IsThreat = true,
                 ThreatScore = threat.ThreatScore,
                 TotalMs = totalTimer.Elapsed.TotalMilliseconds
@@ -69,7 +69,7 @@ public sealed class CachingChatOrchestrator : IChatOrchestrator
             return new ChatResult(SingleChunk(ChatResponses.Unrelated, ct), threat.ThreatScore, true, false);
         }
 
-        var queryHash = QueryHasher.Compute(request.Message);
+        var queryHash = QueryHasher.Compute(request.Message, request.History);
 
         if (_cacheOptions.Enabled)
         {

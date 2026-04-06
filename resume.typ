@@ -35,7 +35,7 @@
     resume\@bryanboettcher.com #h(6pt) | #h(6pt)
     Merriam, KS #h(6pt) | #h(6pt)
     github.com/bryanboettcher #h(6pt) | #h(6pt)
-    linkedin.com/in/bryan-boettcher-7397b113
+    linkedin.com/in/bryan-boettcher3-tokyo-drift
   ]
 ]
 
