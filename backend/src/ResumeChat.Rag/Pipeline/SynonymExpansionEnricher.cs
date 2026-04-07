@@ -105,11 +105,6 @@ public sealed partial class SynonymExpansionEnricher : IQueryEnricher
         (AgileProcess(), "sprint planning fibonacci sizing burndown velocity Jira Trello issue tracking"),
         // Weaknesses / limitations / honest assessment
         (WeaknessQuery(), "limitations tradeoffs shortcomings scope self-assessment gaps honest"),
-
-        // Business impact / cost / ROI / value
-        (BusinessImpact(), "business impact ROI cost savings postage deduplication hosting reduction revenue efficiency optimization hardware"),
-        (CostSavings(), "cost savings reduced hosting postage wasted deduplication infrastructure expansion hardware optimization"),
-        (HiringValue(), "business impact leadership mentoring architecture platform rewrite modernization team enablement efficiency"),
     ];
 
     public ValueTask<ChatQuery> EnrichAsync(ChatQuery query, CancellationToken cancellationToken = default)
@@ -299,15 +294,4 @@ public sealed partial class SynonymExpansionEnricher : IQueryEnricher
 
     [GeneratedRegex(@"\b(weakness(es)?|shortcoming|limitation|downside|flaw|gap|honest|candid|concern|risk|worry|sycophant|biased?)\b", RegexOptions.IgnoreCase)]
     private static partial Regex WeaknessQuery();
-
-    // ── Business impact / cost / ROI ────────────────────────────────────────
-
-    [GeneratedRegex(@"\b(business\s*(impact|value|outcome|result)|ROI|return\s*on\s*investment|value\s*add(ed)?)\b", RegexOptions.IgnoreCase)]
-    private static partial Regex BusinessImpact();
-
-    [GeneratedRegex(@"\b(cost|money|sav(e|ing|ed)|expens(e|ive)|budget|cheap(er)?|reduc(e|ing|ed)\s*(cost|spend)|ROI)\b", RegexOptions.IgnoreCase)]
-    private static partial Regex CostSavings();
-
-    [GeneratedRegex(@"\b(why\s*(hire|should)|what\s*value|what\s*does\s*\w+\s*bring|worth\s*hiring)\b", RegexOptions.IgnoreCase)]
-    private static partial Regex HiringValue();
 }
