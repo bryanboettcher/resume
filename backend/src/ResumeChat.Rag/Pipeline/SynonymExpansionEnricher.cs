@@ -100,6 +100,11 @@ public sealed partial class SynonymExpansionEnricher : IQueryEnricher
         (NodeRuntime(), "csharp dotnet ASP.NET Core minimal-apis backend"),
         // GraphQL → REST/minimal API
         (GraphQl(), "ASP.NET Core minimal-apis endpoints REST API"),
+        // Project management tools → Bryan's PM experience
+        (ProjectManagementTool(), "Jira Trello GitHub Issues project management sprint planning agile scrum kanban"),
+        (AgileProcess(), "sprint planning fibonacci sizing burndown velocity Jira Trello issue tracking"),
+        // Weaknesses / limitations / honest assessment
+        (WeaknessQuery(), "limitations tradeoffs shortcomings scope self-assessment gaps honest"),
     ];
 
     public ValueTask<ChatQuery> EnrichAsync(ChatQuery query, CancellationToken cancellationToken = default)
@@ -276,4 +281,17 @@ public sealed partial class SynonymExpansionEnricher : IQueryEnricher
 
     [GeneratedRegex(@"\b(graphql|apollo|hasura|relay)\b", RegexOptions.IgnoreCase)]
     private static partial Regex GraphQl();
+
+    // ── Project management / ticketing ───────────────────────────────────────
+
+    [GeneratedRegex(@"\b(jira|trello|asana|linear|shortcut|monday|azure\s*devops|youtrack|clickup|basecamp)\b", RegexOptions.IgnoreCase)]
+    private static partial Regex ProjectManagementTool();
+
+    [GeneratedRegex(@"\b(agile|scrum|kanban|sprint|standup|retro(spective)?|backlog|story\s*points?|velocity|burndown|project\s*management|issue\s*track(ing|er)|ticketing)\b", RegexOptions.IgnoreCase)]
+    private static partial Regex AgileProcess();
+
+    // ── Self-assessment / limitations ────────────────────────────────────────
+
+    [GeneratedRegex(@"\b(weakness(es)?|shortcoming|limitation|downside|flaw|gap|honest|candid|concern|risk|worry|sycophant|biased?)\b", RegexOptions.IgnoreCase)]
+    private static partial Regex WeaknessQuery();
 }
