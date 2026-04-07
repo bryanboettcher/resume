@@ -45,7 +45,7 @@
 // === SUMMARY ===
 #section("Summary")
 
-Software engineer with 25+ years of experience building and modernizing production systems. Track record of taking legacy platforms through ground-up rewrites --- most recently a direct mail platform processing 30M recipients across 10--15M unique addresses. Deep .NET ecosystem expertise from Framework 1.x through .NET 9, with hands-on performance work (SIMD, zero-allocation patterns, benchmark-driven optimization). Active open source contributor with merged PRs across 5 projects including MassTransit, Klipper, and LINSTOR. Comfortable across the full delivery stack --- from Angular frontends to Kubernetes infrastructure to custom PCB design. Seeking roles where complex technical problems need pragmatic, shipped solutions --- not committees.
+Software engineer with 25+ years of experience building and modernizing production systems. Track record of taking legacy platforms through ground-up rewrites --- most recently a direct mail platform processing 30M recipients across 10--15M unique addresses. Deep .NET ecosystem expertise from Framework 1.x through .NET 10, with hands-on performance work (SIMD, zero-allocation patterns, benchmark-driven optimization). Recently built a RAG chatbot pipeline from scratch --- vector search, streaming inference, layered prompt injection defense --- to make this resume queryable. Active open source contributor with merged PRs across 5 projects including MassTransit, Klipper, and LINSTOR. Comfortable across the full delivery stack --- from Angular frontends to Kubernetes infrastructure to custom PCB design. Seeking roles where complex technical problems need pragmatic, shipped solutions --- not committees.
 
 // === SKILLS ===
 #section("Technical Skills")
@@ -54,12 +54,13 @@ Software engineer with 25+ years of experience building and modernizing producti
   columns: (1fr, 1fr),
   column-gutter: 24pt,
   [
-    *Languages:* C\#, TypeScript, JavaScript, C, SQL\
+    *Languages:* C\#, TypeScript, JavaScript, Go, Rust, C, SQL\
     *Backend:* ASP.NET Core, MassTransit, Dapper, EF Core, RabbitMQ\
     *Data:* SQL Server, PostgreSQL, MongoDB, ETL pipelines
   ],
   [
-    *Cloud:* Azure (App Service, Container Apps, Service Bus, Azure SQL, Blob Storage, Communications Services, AI Services)\
+    *AI/ML:* RAG pipelines, vector search (Qdrant), embeddings, prompt injection defense\
+    *Cloud:* Azure (App Service, Container Apps, Service Bus, Azure SQL, Blob Storage)\
     *Infrastructure:* Kubernetes, Docker, ArgoCD, Talos Linux, LINSTOR/DRBD
   ],
 )
@@ -72,11 +73,11 @@ Software engineer with 25+ years of experience building and modernizing producti
   "Senior/Lead Engineer",
   "Jun 2024 -- Oct 2025",
   [
-    - Assessed legacy Node.js/Express platform and led ground-up rewrite to .NET 9, expanding from 45 features across 9 domains to 100+ features across 12 domains
+    - Assessed legacy Node.js/Express platform and led ground-up rewrite to .NET 10, expanding from 45 features across 9 domains to 100+ features across 12 domains
     - Designed multi-source ETL pipeline processing 30M recipients and 10--15M unique addresses with USPS-certified normalization
     - Achieved \<10 sec imports for 50K-row datasets, \<100ns address lookups via CRC64 hash-based deduplication and in-memory caching
     - Built architecture that enabled team members to ship independently --- lead developer contributed 2.5x the commit volume on established patterns
-    - Delivered maintainable codebase with flexible event-driven architecture, hundreds of repeatable and rerunnable SQL migrations, and full CI/CD pipeline
+    - Managed work across Jira and Trello with Fibonacci sizing, 3-point story caps, and burndown tracking; adapted tooling to team context across roles
   ]
 )
 
@@ -183,6 +184,11 @@ Identified and resolved a StackOverflowException in the Lamar IoC container caus
 
 #v(6pt)
 
+*RAG Chatbot Pipeline:*
+Built a retrieval-augmented generation chatbot making this resume queryable in production. ASP.NET Core streaming API with SSE, Qdrant vector store, markdown-aware chunking, and synonym expansion enricher mapping conversational terms to corpus vocabulary. Four-layer prompt injection defense: regex validation, LLM threat classification, canary sentinel with sliding window detection, and session-level threat scoring. PHP streaming proxy manages sessions, history, and rate limiting. Backed by 120+ evidence documents for grounded, citation-backed answers.
+
+#v(6pt)
+
 *AI-Assisted Development Methodology:*
 Operates an eleven-agent AI development configuration with specialized roles --- systems architect, backend engineer, frontend engineer, integration test engineer, code reviewer, project manager --- each with domain-specific context documents defining architectural patterns, coding standards, and codebase conventions. This configuration enabled a three-person team to deliver a platform expansion from 45 to 100+ features in 16 months, with AI agents handling implementation while human developers focused on architectural decisions and business logic validation. Extended this methodology to infrastructure operations, using specialized agents for Kubernetes cluster management, deployment orchestration, and Git workflow automation.
 
@@ -199,6 +205,6 @@ Designed a custom battery management system in KiCAD featuring an LT8228 buck-bo
 #v(6pt)
 
 *Community & Knowledge Sharing:*
-Maintains approximately 7,400 combined reputation across Stack Overflow and Software Engineering Stack Exchange, with answers characterized by working benchmark implementations rather than opinion-based recommendations --- including a top-scored answer demonstrating HashSet versus sorted array binary search performance with full BenchmarkDotNet harness, and a high-view answer on LINQ query composition viewed 190,000 times. Open source contributions consistently involve substantive code review engagement with project maintainers, iterating on feedback across multiple review cycles rather than drive-by pull requests.
+Approximately 7,400 combined reputation across Stack Overflow and Software Engineering Stack Exchange, with benchmark-driven answers including a top-scored HashSet vs. sorted array comparison with full BenchmarkDotNet harness and a LINQ composition answer viewed 190,000 times. Open source contributions involve substantive multi-round code review engagement with maintainers.
 
 ]
