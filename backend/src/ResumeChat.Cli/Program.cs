@@ -50,7 +50,7 @@ Console.CancelKeyPress += (_, e) => { e.Cancel = true; cts.Cancel(); };
 
 try
 {
-    await foreach (var progress in ingestion.IngestCorpusAsync(corpusDir, cts.Token).ConfigureAwait(false))
+    await foreach (var progress in ingestion.IngestCorpusAsync(corpusDir, cts.Token))
     {
         Console.WriteLine($"[{progress.ChunksProcessed:D4}] {progress.Status}");
     }

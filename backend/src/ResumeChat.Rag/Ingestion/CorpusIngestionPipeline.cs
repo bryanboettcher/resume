@@ -36,7 +36,7 @@ public sealed class CorpusIngestionPipeline : IIngestionPipeline
             var relativePath = Path.GetRelativePath(directory, filePath);
             fileActivity?.SetTag("rag.ingest.file_path", relativePath);
 
-            var content = await File.ReadAllTextAsync(filePath, cancellationToken).ConfigureAwait(false);
+            var content = await File.ReadAllTextAsync(filePath, cancellationToken);
             var metadata = BuildMetadata(content, relativePath);
             var chunks = _chunker.Chunk(content, metadata);
 
@@ -47,7 +47,7 @@ public sealed class CorpusIngestionPipeline : IIngestionPipeline
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                var embedding = await _embedder.EmbedAsync(chunk.Text, cancellationToken).ConfigureAwait(false);
+                var embedding = await _embedder.EmbedAsync(chunk.Text, cancellationToken);
                 yield return new EmbeddedChunk(chunk, embedding);
             }
         }

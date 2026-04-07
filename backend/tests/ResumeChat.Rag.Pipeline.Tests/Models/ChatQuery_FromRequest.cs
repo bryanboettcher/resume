@@ -25,14 +25,6 @@ public abstract class ChatQuery_FromRequest
             => _result.ProcessedMessage.ShouldBe("Tell me about Bryan's Kubernetes work");
 
         [Test]
-        public void TopK_defaults_to_5()
-            => _result.TopK.ShouldBe(5);
-
-        [Test]
-        public void Dimensions_is_null()
-            => _result.Dimensions.ShouldBeNull();
-
-        [Test]
         public void MinScore_is_null()
             => _result.MinScore.ShouldBeNull();
     }

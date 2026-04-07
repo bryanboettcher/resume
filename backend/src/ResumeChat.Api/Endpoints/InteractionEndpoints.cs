@@ -26,49 +26,49 @@ public static class InteractionEndpoints
     }
 
     private static async Task<IResult> HandleList(
+        IInteractionRepository interactions,
         int limit = 20,
-        IInteractionRepository? interactions = null,
         CancellationToken ct = default)
     {
-        var results = await interactions!.GetRecentAsync(Math.Clamp(limit, 1, 100), ct).ConfigureAwait(false);
+        var results = await interactions.GetRecentAsync(Math.Clamp(limit, 1, 100), ct);
         return Results.Ok(results.Select(FormatInteraction));
     }
 
     private static async Task<IResult> HandleGet(
         long id,
-        IInteractionRepository? interactions = null,
+        IInteractionRepository interactions,
         CancellationToken ct = default)
     {
-        var interaction = await interactions!.GetByIdAsync(id, ct).ConfigureAwait(false);
+        var interaction = await interactions.GetByIdAsync(id, ct);
         return interaction is null ? Results.NotFound() : Results.Ok(FormatInteraction(interaction));
     }
 
     private static async Task<IResult> HandleSearch(
         string query,
+        IInteractionRepository interactions,
         int limit = 20,
-        IInteractionRepository? interactions = null,
         CancellationToken ct = default)
     {
-        var results = await interactions!.SearchAsync(query, Math.Clamp(limit, 1, 100), ct).ConfigureAwait(false);
+        var results = await interactions.SearchAsync(query, Math.Clamp(limit, 1, 100), ct);
         return Results.Ok(results.Select(FormatInteraction));
     }
 
     private static async Task<IResult> HandlePurge(
         long id,
-        IInteractionRepository? interactions = null,
+        IInteractionRepository interactions,
         CancellationToken ct = default)
     {
-        return await interactions!.PurgeAsync(id, ct).ConfigureAwait(false)
+        return await interactions.PurgeAsync(id, ct)
             ? Results.NoContent()
             : Results.NotFound();
     }
 
     private static async Task<IResult> HandleExpire(
         long id,
-        IInteractionRepository? interactions = null,
+        IInteractionRepository interactions,
         CancellationToken ct = default)
     {
-        return await interactions!.ExpireAsync(id, ct).ConfigureAwait(false)
+        return await interactions.ExpireAsync(id, ct)
             ? Results.NoContent()
             : Results.NotFound();
     }

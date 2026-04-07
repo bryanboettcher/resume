@@ -98,22 +98,18 @@ function parseSseResponse(string $raw): string {
 }
 
 function pushHistory(string $prompt, string $response): void {
-    session_start();
     $history = $_SESSION['chat_history'] ?? [];
     $history[] = ['prompt' => $prompt, 'response' => $response];
     while (count($history) > 6) {
         array_shift($history);
     }
     $_SESSION['chat_history'] = $history;
-    session_write_close();
 }
 
 function burnRateLimit(): void {
     $rl = rateLimitConfig();
-    session_start();
     $_SESSION['rate_count'] = $rl['limit'];
     $_SESSION['threat_score'] = ($_SESSION['threat_score'] ?? 0) + 50;
-    session_write_close();
 }
 
 function createBackendRequest(string $path, array|null $payload = null, array $extraHeaders = [], string $method = 'POST', int $timeout = 60): CurlHandle {

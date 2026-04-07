@@ -106,13 +106,12 @@ public static class WebApplicationBuilderExtensions
             .ValidateOnStart();
 
         // Query pipeline
-        builder.Services.AddOptions<DimensionPolicyOptions>()
-            .BindConfiguration(DimensionPolicyOptions.SectionName)
+        builder.Services.AddOptions<RetrievalOptions>()
+            .BindConfiguration(RetrievalOptions.SectionName)
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
         builder.Services.AddTransient<IQueryEnricher, SynonymExpansionEnricher>();
-        builder.Services.AddTransient<IQueryEnricher, DimensionPolicyEnricher>();
         builder.Services.AddTransient<IQueryTransformer, DefaultQueryTransformer>();
 
         // Response — select provider based on configuration
@@ -124,7 +123,15 @@ public static class WebApplicationBuilderExtensions
                     .BindConfiguration(ClaudeResponseOptions.SectionName)
                     .ValidateDataAnnotations()
                     .ValidateOnStart();
-                builder.Services.AddSingleton<IResponseProvider, ClaudeResponseProvider>();
+                builder.Services.AddHttpClient<IResponseProvider, ClaudeResponseProvider>();
+                break;
+
+            case "ClaudeCli":
+                builder.Services.AddOptions<ClaudeCliResponseOptions>()
+                    .BindConfiguration(ClaudeCliResponseOptions.SectionName)
+                    .ValidateDataAnnotations()
+                    .ValidateOnStart();
+                builder.Services.AddSingleton<IResponseProvider, ClaudeCliResponseProvider>();
                 break;
 
             case "Ollama":

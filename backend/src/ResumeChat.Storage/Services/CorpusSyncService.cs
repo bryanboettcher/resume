@@ -43,10 +43,10 @@ public sealed class CorpusSyncService
             ct.ThrowIfCancellationRequested();
 
             var relativePath = Path.GetRelativePath(directory, filePath);
-            var content = await File.ReadAllTextAsync(filePath, ct).ConfigureAwait(false);
+            var content = await File.ReadAllTextAsync(filePath, ct);
             var contentHash = ComputeContentHash(content);
 
-            var existing = await _repository.GetDocumentByPathAsync(relativePath, ct).ConfigureAwait(false);
+            var existing = await _repository.GetDocumentByPathAsync(relativePath, ct);
             if (existing is not null && existing.ContentHash == contentHash)
             {
                 skipped++;
@@ -78,7 +78,7 @@ public sealed class CorpusSyncService
                 })
                 .ToList();
 
-            await _repository.UpsertDocumentAsync(document, chunkEntities, ct).ConfigureAwait(false);
+            await _repository.UpsertDocumentAsync(document, chunkEntities, ct);
 
             synced++;
             _logger.LogDebug("Synced {FilePath}: {ChunkCount} chunks", relativePath, chunkEntities.Count);
@@ -95,7 +95,7 @@ public sealed class CorpusSyncService
     {
         var contentHash = ComputeContentHash(content);
 
-        var existing = await _repository.GetDocumentByPathAsync(sourcePath, ct).ConfigureAwait(false);
+        var existing = await _repository.GetDocumentByPathAsync(sourcePath, ct);
         if (existing is not null && existing.ContentHash == contentHash)
             return new SyncProgress("skipped", sourcePath, Skipped: true, ChunkCount: existing.Chunks.Count);
 
@@ -123,7 +123,7 @@ public sealed class CorpusSyncService
             })
             .ToList();
 
-        await _repository.UpsertDocumentAsync(document, chunkEntities, ct).ConfigureAwait(false);
+        await _repository.UpsertDocumentAsync(document, chunkEntities, ct);
 
         _logger.LogDebug("Upserted {FilePath}: {ChunkCount} chunks", sourcePath, chunkEntities.Count);
         return new SyncProgress("synced", sourcePath, Skipped: false, ChunkCount: chunkEntities.Count);

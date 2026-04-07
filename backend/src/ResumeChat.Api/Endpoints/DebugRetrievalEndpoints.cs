@@ -17,13 +17,13 @@ public static class DebugRetrievalEndpoints
 
     private static async Task<IResult> HandleQuery(
         string query,
+        IRetrievalProvider retrieval,
         int topK = 5,
         int? dimensions = null,
-        IRetrievalProvider? retrieval = null,
         CancellationToken ct = default)
     {
         var request = new RetrievalRequest(query, topK, dimensions);
-        var results = await retrieval!.RetrieveAsync(request, ct).ConfigureAwait(false);
+        var results = await retrieval.RetrieveAsync(request, ct);
 
         return Results.Ok(new
         {
@@ -36,16 +36,10 @@ public static class DebugRetrievalEndpoints
 
     private static async Task<IResult> HandlePipelineQuery(
         string query,
-        IQueryTransformer? transformer = null,
+        IQueryTransformer transformer,
         CancellationToken ct = default)
     {
-        var payload = await transformer!.TransformAsync(new ChatRequest(query), ct).ConfigureAwait(false);
-
-        if (payload is null)
-            return Results.Problem("Transform returned null");
-
-        if (payload.IsThreat)
-            return Results.Ok(new { query, threat = true, threatScore = payload.ThreatScore });
+        var payload = await transformer.TransformAsync(new ChatRequest(query), ct);
 
         return Results.Ok(new
         {

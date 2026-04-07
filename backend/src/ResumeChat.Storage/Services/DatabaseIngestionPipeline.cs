@@ -28,7 +28,7 @@ public sealed class DatabaseIngestionPipeline : IIngestionPipeline
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         // directory parameter unused — source of truth is PG corpus table
-        var documents = await _repository.GetAllDocumentsAsync(cancellationToken).ConfigureAwait(false);
+        var documents = await _repository.GetAllDocumentsAsync(cancellationToken);
 
         _logger.LogInformation("DatabaseIngestionPipeline: embedding {DocumentCount} documents from PG", documents.Count);
 
@@ -53,7 +53,7 @@ public sealed class DatabaseIngestionPipeline : IIngestionPipeline
                     chunkEntity.ChunkIndex,
                     metadata);
 
-                var embedding = await _embedder.EmbedAsync(chunkEntity.ChunkText, cancellationToken).ConfigureAwait(false);
+                var embedding = await _embedder.EmbedAsync(chunkEntity.ChunkText, cancellationToken);
 
                 totalChunks++;
                 yield return new EmbeddedChunk(documentChunk, embedding);

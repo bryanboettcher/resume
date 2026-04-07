@@ -14,13 +14,13 @@ public sealed class ApiKeyMiddleware(
     {
         if (!context.Request.Path.StartsWithSegments("/api"))
         {
-            await next(context).ConfigureAwait(false);
+            await next(context);
             return;
         }
 
         if (context.Request.Path.Equals("/api/chat/health"))
         {
-            await next(context).ConfigureAwait(false);
+            await next(context);
             return;
         }
 
@@ -32,6 +32,6 @@ public sealed class ApiKeyMiddleware(
             return;
         }
 
-        await next(context).ConfigureAwait(false);
+        await next(context);
     }
 }

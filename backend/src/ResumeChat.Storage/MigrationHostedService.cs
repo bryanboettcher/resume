@@ -24,9 +24,9 @@ public sealed class MigrationHostedService : IHostedService
         {
             try
             {
-                await using var context = await _factory.CreateDbContextAsync(ct).ConfigureAwait(false);
+                await using var context = await _factory.CreateDbContextAsync(ct);
                 _logger.LogInformation("Applying database schema (attempt {Attempt})...", attempt);
-                await context.Database.EnsureCreatedAsync(ct).ConfigureAwait(false);
+                await context.Database.EnsureCreatedAsync(ct);
                 _logger.LogInformation("Database schema ready");
                 return;
             }
@@ -34,7 +34,7 @@ public sealed class MigrationHostedService : IHostedService
             {
                 _logger.LogWarning(ex, "Database not ready (attempt {Attempt}/{MaxRetries}), retrying in 2s...",
                     attempt, maxRetries);
-                await Task.Delay(2000, ct).ConfigureAwait(false);
+                await Task.Delay(2000, ct);
             }
         }
     }

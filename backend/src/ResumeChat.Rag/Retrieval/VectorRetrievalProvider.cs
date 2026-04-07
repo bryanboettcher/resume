@@ -34,8 +34,8 @@ public sealed class VectorRetrievalProvider : IRetrievalProvider
 
         var startTimestamp = Stopwatch.GetTimestamp();
 
-        var queryEmbedding = await _embedder.EmbedAsync(request.Query, cancellationToken).ConfigureAwait(false);
-        var results = await _vectorStore.SearchAsync(queryEmbedding, request.TopK, request.Dimensions, cancellationToken).ConfigureAwait(false);
+        var queryEmbedding = await _embedder.EmbedAsync(request.Query, cancellationToken);
+        var results = await _vectorStore.SearchAsync(queryEmbedding, request.TopK, request.Dimensions, cancellationToken);
 
         var elapsedMs = Stopwatch.GetElapsedTime(startTimestamp).TotalMilliseconds;
         activity?.SetTag("rag.result_count", results.Count);

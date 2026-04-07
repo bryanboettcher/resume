@@ -38,13 +38,13 @@ public sealed class IngestionService
         {
             yield return new IngestionProgress("Detecting embedding dimensions", 0);
 
-            var probe = await _embedder.EmbedAsync("probe", cancellationToken).ConfigureAwait(false);
+            var probe = await _embedder.EmbedAsync("probe", cancellationToken);
             var vectorSize = probe.Length;
 
             _logger.LogInformation("Embedding dimensions: {VectorSize}", vectorSize);
             yield return new IngestionProgress($"Ensuring Qdrant collection (vector size: {vectorSize})", 0);
 
-            await _vectorStore.EnsureCollectionAsync(vectorSize, cancellationToken).ConfigureAwait(false);
+            await _vectorStore.EnsureCollectionAsync(vectorSize, cancellationToken);
 
             yield return new IngestionProgress("Starting ingestion", 0);
 
@@ -52,9 +52,9 @@ public sealed class IngestionService
             string? lastFile = null;
 
             await foreach (var embedded in _pipeline.IngestAsync(corpusDirectory, cancellationToken)
-                               .ConfigureAwait(false))
+                               )
             {
-                await _vectorStore.UpsertAsync(embedded, cancellationToken).ConfigureAwait(false);
+                await _vectorStore.UpsertAsync(embedded, cancellationToken);
                 count++;
                 RagDiagnostics.IngestionChunks.Add(1);
 

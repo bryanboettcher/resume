@@ -25,18 +25,28 @@ public abstract class ResponseProviderBase : IResponseProvider, ICompletionMetad
         QueryPayload payload,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        var activity = RagDiagnostics.ActivitySource.StartActivity("rag.response");
+        using var activity = RagDiagnostics.ActivitySource.StartActivity("rag.response");
         activity?.SetTag("rag.response.model", ModelName);
         activity?.SetTag("rag.response.provider", ProviderName);
         activity?.SetTag("rag.response.context_chunks", payload.Documents.Count);
 
+        await foreach (var token in StreamWithMetrics(payload, cancellationToken))
+        {
+            yield return token;
+        }
+    }
+
+    private async IAsyncEnumerable<string> StreamWithMetrics(
+        QueryPayload payload,
+        [EnumeratorCancellation] CancellationToken cancellationToken)
+    {
         var totalStart = Stopwatch.GetTimestamp();
         var firstTokenRecorded = false;
 
         _logger.LogInformation("Starting {Provider} response with model {Model} ({ContextChunks} context chunks)",
             ProviderName, ModelName, payload.Documents.Count);
 
-        await foreach (var token in StreamTokensAsync(payload, cancellationToken).ConfigureAwait(false))
+        await foreach (var token in StreamTokensAsync(payload, cancellationToken))
         {
             if (!firstTokenRecorded)
             {
@@ -51,8 +61,6 @@ public abstract class ResponseProviderBase : IResponseProvider, ICompletionMetad
         var totalMs = Stopwatch.GetElapsedTime(totalStart).TotalMilliseconds;
         RagDiagnostics.CompletionTotalDuration.Record(totalMs);
         _logger.LogInformation("Response finished in {ElapsedMs:F1}ms", totalMs);
-
-        activity?.Dispose();
     }
 
     protected abstract IAsyncEnumerable<string> StreamTokensAsync(

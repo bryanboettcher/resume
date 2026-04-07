@@ -1,5 +1,6 @@
 using System.Runtime.CompilerServices;
 using Anthropic;
+using Anthropic.Core;
 using Anthropic.Models.Messages;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -15,6 +16,7 @@ public sealed class ClaudeResponseProvider : ResponseProviderBase
     private readonly CompletionSecurityOptions _security;
 
     public ClaudeResponseProvider(
+        HttpClient httpClient,
         IOptions<ClaudeResponseOptions> options,
         IOptions<CompletionSecurityOptions> security,
         ILogger<ClaudeResponseProvider> logger)
@@ -22,7 +24,11 @@ public sealed class ClaudeResponseProvider : ResponseProviderBase
     {
         _options = options.Value;
         _security = security.Value;
-        _client = new AnthropicClient { ApiKey = _options.ApiKey };
+        _client = new AnthropicClient(new ClientOptions
+        {
+            ApiKey = _options.ApiKey,
+            HttpClient = httpClient
+        });
     }
 
     protected override string ProviderName => "Claude";
@@ -53,8 +59,7 @@ public sealed class ClaudeResponseProvider : ResponseProviderBase
             Messages = messages
         };
 
-        await foreach (var evt in _client.Messages.CreateStreaming(parameters, cancellationToken)
-                           .ConfigureAwait(false))
+        await foreach (var evt in _client.Messages.CreateStreaming(parameters, cancellationToken))
         {
             if (evt.TryPickContentBlockDelta(out var delta) &&
                 delta.Delta.TryPickText(out var textDelta))

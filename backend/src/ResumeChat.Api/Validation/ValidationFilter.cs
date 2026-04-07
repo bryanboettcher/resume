@@ -8,12 +8,12 @@ public sealed class ValidationFilter<T>(IValidator<T> validator) : IEndpointFilt
         EndpointFilterInvocationContext context, EndpointFilterDelegate next)
     {
         if (context.Arguments.FirstOrDefault(a => a is T) is not T argument)
-            return await next(context).ConfigureAwait(false);
+            return await next(context);
 
-        var result = await validator.ValidateAsync(argument).ConfigureAwait(false);
+        var result = await validator.ValidateAsync(argument);
         if (!result.IsValid)
             return Results.BadRequest(result.Errors.Select(e => e.ErrorMessage));
 
-        return await next(context).ConfigureAwait(false);
+        return await next(context);
     }
 }

@@ -35,36 +35,36 @@ public static class IngestionEndpoints
 
         try
         {
-            await foreach (var progress in ingestion.IngestCorpusAsync(corpusDir, ct).ConfigureAwait(false))
+            await foreach (var progress in ingestion.IngestCorpusAsync(corpusDir, ct))
             {
                 await context.Response.WriteAsync(
-                    $"data: [{progress.ChunksProcessed}] {progress.Status}\n\n", ct).ConfigureAwait(false);
-                await context.Response.Body.FlushAsync(ct).ConfigureAwait(false);
+                    $"data: [{progress.ChunksProcessed}] {progress.Status}\n\n", ct);
+                await context.Response.Body.FlushAsync(ct);
             }
 
-            await context.Response.WriteAsync("data: [DONE]\n\n", ct).ConfigureAwait(false);
+            await context.Response.WriteAsync("data: [DONE]\n\n", ct);
         }
         catch (OperationCanceledException)
         {
-            await context.Response.WriteAsync("data: [CANCELLED]\n\n", CancellationToken.None).ConfigureAwait(false);
+            await context.Response.WriteAsync("data: [CANCELLED]\n\n", CancellationToken.None);
         }
         catch (Exception ex)
         {
-            await context.Response.WriteAsync($"data: [ERROR] {ex.Message}\n\n", CancellationToken.None).ConfigureAwait(false);
+            await context.Response.WriteAsync($"data: [ERROR] {ex.Message}\n\n", CancellationToken.None);
         }
 
-        await context.Response.Body.FlushAsync(CancellationToken.None).ConfigureAwait(false);
+        await context.Response.Body.FlushAsync(CancellationToken.None);
         return Results.Empty;
     }
 
     private static async Task<IResult> HandleStatus(
         IVectorStore vectorStore,
         IOptions<CorpusOptions> corpusOptions,
-        IOptions<DimensionPolicyOptions> dimensionPolicy,
+        IOptions<RetrievalOptions> retrievalOptions,
         IConfiguration configuration,
         CancellationToken ct)
     {
-        var collection = await vectorStore.GetCollectionInfoAsync(ct).ConfigureAwait(false);
+        var collection = await vectorStore.GetCollectionInfoAsync(ct);
 
         return Results.Ok(new
         {
@@ -83,10 +83,10 @@ public static class IngestionEndpoints
             {
                 completionProvider = configuration["Completion:Provider"] ?? "Hardcoded",
                 guardProvider = configuration["Guard:Provider"] ?? "Passthrough",
-                dimensionPolicy = new
+                retrieval = new
                 {
-                    defaultDimensions = dimensionPolicy.Value.DefaultDimensions,
-                    defaultTopK = dimensionPolicy.Value.DefaultTopK
+                    dimensions = retrievalOptions.Value.Dimensions,
+                    topK = retrievalOptions.Value.TopK
                 }
             }
         });

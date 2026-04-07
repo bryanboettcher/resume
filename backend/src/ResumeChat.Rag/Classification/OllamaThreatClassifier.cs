@@ -52,11 +52,11 @@ public sealed class OllamaThreatClassifier(
             guardCts.CancelAfter(TimeSpan.FromSeconds(_options.TimeoutSeconds));
 
             var response = await httpClient.PostAsJsonAsync(
-                $"{_options.BaseUrl.TrimEnd('/')}/api/chat", body, guardCts.Token).ConfigureAwait(false);
+                $"{_options.BaseUrl.TrimEnd('/')}/api/chat", body, guardCts.Token);
 
             response.EnsureSuccessStatusCode();
 
-            var result = await response.Content.ReadFromJsonAsync<OllamaResponse>(guardCts.Token).ConfigureAwait(false);
+            var result = await response.Content.ReadFromJsonAsync<OllamaResponse>(guardCts.Token);
             var answer = result?.Message?.Content?.Trim() ?? "";
 
             if (answer.Contains("UNSAFE", StringComparison.OrdinalIgnoreCase))

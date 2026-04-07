@@ -3,7 +3,7 @@
     <Project Path="src/ResumeChat.Api/ResumeChat.Api.csproj" />
     <Project Path="src/ResumeChat.AppHost/ResumeChat.AppHost.csproj" />
     <Project Path="src/ResumeChat.Cli/ResumeChat.Cli.csproj" />
-    <Project Path="src/ResumeChat.Corpus.Cli/ResumeChat.Corpus.Cli.csproj" />
+
     <Project Path="src/ResumeChat.Rag/ResumeChat.Rag.csproj" />
     <Project Path="src/ResumeChat.ServiceDefaults/ResumeChat.ServiceDefaults.csproj" />
     <Project Path="src/ResumeChat.Storage/ResumeChat.Storage.csproj" />

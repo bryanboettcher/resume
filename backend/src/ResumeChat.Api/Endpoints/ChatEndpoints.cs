@@ -51,7 +51,7 @@ public static class ChatEndpoints
 
         try
         {
-            var result = await orchestrator.ProcessChatAsync(request, ct).ConfigureAwait(false);
+            var result = await orchestrator.ProcessChatAsync(request, ct);
 
             context.Response.Headers["X-Threat-Score"] = result.ThreatScore.ToString();
 
@@ -61,7 +61,7 @@ public static class ChatEndpoints
             if (result.IsThreat)
             {
                 await SingleChunk(ChatResponses.Unrelated, ct)
-                    .StreamAsSseAsync(context, cancellationToken: ct).ConfigureAwait(false);
+                    .StreamAsSseAsync(context, cancellationToken: ct);
                 return Results.Empty;
             }
 
@@ -74,7 +74,7 @@ public static class ChatEndpoints
                 logger.LogInformation("Chat response ({ResponseLength} chars): {ResponsePreview}",
                     fullResponse.Length,
                     fullResponse.Length > 200 ? fullResponse[..200] + "..." : fullResponse);
-            }, cancellationToken: ct).ConfigureAwait(false);
+            }, cancellationToken: ct);
 
             return Results.Empty;
         }

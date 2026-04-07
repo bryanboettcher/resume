@@ -1,12 +1,11 @@
 <?php
 require __DIR__ . '/bootstrap.php';
 
-// --- Session state ---
+// --- Session state (open once, close at end) ---
 session_start();
 checkRateLimit();
 $threatScore = $_SESSION['threat_score'] ?? 0;
 $history = $_SESSION['chat_history'] ?? [];
-session_write_close();
 
 // --- Validate request ---
 requirePost();
@@ -24,13 +23,11 @@ $canaryValue   = canary();
 $canaryTripped = false;
 $canaryBuffer  = '';
 $rawResponse   = '';
+$backendThreatScore = 0;
 
-$onHeader = function($ch, $header) {
+$onHeader = function($ch, $header) use (&$backendThreatScore) {
     if (stripos($header, 'X-Threat-Score:') === 0) {
-        $score = (int) trim(substr($header, 15));
-        session_start();
-        $_SESSION['threat_score'] = ($_SESSION['threat_score'] ?? 0) + $score;
-        session_write_close();
+        $backendThreatScore = (int) trim(substr($header, 15));
     }
     return strlen($header);
 };
@@ -80,10 +77,16 @@ if ($canaryTripped) {
     flush();
     burnRateLimit();
 } elseif (!$success || $httpCode >= 400) {
+    session_write_close();
     if (!headers_sent()) abort(502, 'Chat backend unavailable');
 } else {
     $responseText = parseSseResponse($rawResponse);
     if ($responseText !== '') {
         pushHistory($userMessage, $responseText);
     }
+    if ($backendThreatScore > 0) {
+        $_SESSION['threat_score'] = $threatScore + $backendThreatScore;
+    }
 }
+
+session_write_close();

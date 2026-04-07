@@ -102,7 +102,7 @@ public sealed partial class SynonymExpansionEnricher : IQueryEnricher
         (GraphQl(), "ASP.NET Core minimal-apis endpoints REST API"),
     ];
 
-    public Task<ChatQuery> EnrichAsync(ChatQuery query, CancellationToken cancellationToken = default)
+    public ValueTask<ChatQuery> EnrichAsync(ChatQuery query, CancellationToken cancellationToken = default)
     {
         var message = query.ProcessedMessage;
         var appended = new List<string>();
@@ -114,14 +114,14 @@ public sealed partial class SynonymExpansionEnricher : IQueryEnricher
         }
 
         if (appended.Count == 0)
-            return Task.FromResult(query);
+            return new(query);
 
         var enriched = query with
         {
             ProcessedMessage = $"{message} {string.Join(' ', appended)}"
         };
 
-        return Task.FromResult(enriched);
+        return new(enriched);
     }
 
     // ── Data pipeline / ETL ──────────────────────────────────────────────────

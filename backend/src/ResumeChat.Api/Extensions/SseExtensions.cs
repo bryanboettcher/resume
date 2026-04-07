@@ -18,16 +18,16 @@ public static class SseExtensions
 
         System.Text.StringBuilder? responseBuilder = onComplete is not null ? new() : null;
 
-        await foreach (var chunk in chunks.ConfigureAwait(false))
+        await foreach (var chunk in chunks)
         {
             responseBuilder?.Append(chunk);
             var escaped = chunk.Replace("\n", "\ndata: ");
-            await context.Response.WriteAsync($"data: {escaped}\n\n", cancellationToken).ConfigureAwait(false);
-            await context.Response.Body.FlushAsync(cancellationToken).ConfigureAwait(false);
+            await context.Response.WriteAsync($"data: {escaped}\n\n", cancellationToken);
+            await context.Response.Body.FlushAsync(cancellationToken);
         }
 
-        await context.Response.WriteAsync("data: [DONE]\n\n", cancellationToken).ConfigureAwait(false);
-        await context.Response.Body.FlushAsync(cancellationToken).ConfigureAwait(false);
+        await context.Response.WriteAsync("data: [DONE]\n\n", cancellationToken);
+        await context.Response.Body.FlushAsync(cancellationToken);
 
         if (responseBuilder is not null)
             onComplete!(responseBuilder.ToString());

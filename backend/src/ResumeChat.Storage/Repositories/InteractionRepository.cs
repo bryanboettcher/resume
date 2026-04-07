@@ -7,46 +7,43 @@ internal sealed class InteractionRepository(IDbContextFactory<ResumeChatDbContex
 {
     public async Task<InteractionEntity?> FindCachedResponseAsync(string queryHash, CancellationToken ct = default)
     {
-        await using var context = await contextFactory.CreateDbContextAsync(ct).ConfigureAwait(false);
+        await using var context = await contextFactory.CreateDbContextAsync(ct);
 
         return await context.Interactions
             .Where(i => i.QueryHash == queryHash && i.ExpiresAt > DateTimeOffset.UtcNow)
             .OrderByDescending(i => i.CreatedAt)
-            .FirstOrDefaultAsync(ct)
-            .ConfigureAwait(false);
+            .FirstOrDefaultAsync(ct);
     }
 
     public async Task LogInteractionAsync(InteractionEntity interaction, CancellationToken ct = default)
     {
-        await using var context = await contextFactory.CreateDbContextAsync(ct).ConfigureAwait(false);
+        await using var context = await contextFactory.CreateDbContextAsync(ct);
 
         context.Interactions.Add(interaction);
-        await context.SaveChangesAsync(ct).ConfigureAwait(false);
+        await context.SaveChangesAsync(ct);
     }
 
     public async Task<IReadOnlyList<InteractionEntity>> GetRecentAsync(int limit = 20, CancellationToken ct = default)
     {
-        await using var context = await contextFactory.CreateDbContextAsync(ct).ConfigureAwait(false);
+        await using var context = await contextFactory.CreateDbContextAsync(ct);
 
         return await context.Interactions
             .OrderByDescending(i => i.CreatedAt)
             .Take(limit)
-            .ToListAsync(ct)
-            .ConfigureAwait(false);
+            .ToListAsync(ct);
     }
 
     public async Task<InteractionEntity?> GetByIdAsync(long id, CancellationToken ct = default)
     {
-        await using var context = await contextFactory.CreateDbContextAsync(ct).ConfigureAwait(false);
+        await using var context = await contextFactory.CreateDbContextAsync(ct);
 
         return await context.Interactions
-            .FirstOrDefaultAsync(i => i.Id == id, ct)
-            .ConfigureAwait(false);
+            .FirstOrDefaultAsync(i => i.Id == id, ct);
     }
 
     public async Task<IReadOnlyList<InteractionEntity>> SearchAsync(string query, int limit = 20, CancellationToken ct = default)
     {
-        await using var context = await contextFactory.CreateDbContextAsync(ct).ConfigureAwait(false);
+        await using var context = await contextFactory.CreateDbContextAsync(ct);
 
         var lowerQuery = query.ToLowerInvariant();
         return await context.Interactions
@@ -54,32 +51,30 @@ internal sealed class InteractionRepository(IDbContextFactory<ResumeChatDbContex
                      || i.ResponseText.ToLower().Contains(lowerQuery))
             .OrderByDescending(i => i.CreatedAt)
             .Take(limit)
-            .ToListAsync(ct)
-            .ConfigureAwait(false);
+            .ToListAsync(ct);
     }
 
     public async Task<bool> PurgeAsync(long id, CancellationToken ct = default)
     {
-        await using var context = await contextFactory.CreateDbContextAsync(ct).ConfigureAwait(false);
+        await using var context = await contextFactory.CreateDbContextAsync(ct);
 
         var rows = await context.Interactions
             .Where(i => i.Id == id)
-            .ExecuteDeleteAsync(ct)
-            .ConfigureAwait(false);
+            .ExecuteDeleteAsync(ct);
 
         return rows > 0;
     }
 
     public async Task<bool> ExpireAsync(long id, CancellationToken ct = default)
     {
-        await using var context = await contextFactory.CreateDbContextAsync(ct).ConfigureAwait(false);
+        await using var context = await contextFactory.CreateDbContextAsync(ct);
 
         var rows = await context.Interactions
             .Where(i => i.Id == id)
             .ExecuteUpdateAsync(s => s
                 .SetProperty(i => i.QueryHash, "")
                 .SetProperty(i => i.ExpiresAt, DateTimeOffset.UtcNow),
-            ct).ConfigureAwait(false);
+            ct);
 
         return rows > 0;
     }

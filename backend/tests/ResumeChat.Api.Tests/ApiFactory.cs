@@ -137,6 +137,9 @@ internal sealed class EmptyCorpusRepository : ICorpusRepository
     public Task<IReadOnlyList<CorpusDocumentEntity>> GetAllDocumentsAsync(CancellationToken ct = default) =>
         Task.FromResult<IReadOnlyList<CorpusDocumentEntity>>([]);
 
+    public Task<CorpusDocumentEntity?> GetDocumentByIdAsync(long id, CancellationToken ct = default) =>
+        Task.FromResult<CorpusDocumentEntity?>(null);
+
     public Task<CorpusDocumentEntity?> GetDocumentByPathAsync(string sourcePath, CancellationToken ct = default) =>
         Task.FromResult<CorpusDocumentEntity?>(null);
 

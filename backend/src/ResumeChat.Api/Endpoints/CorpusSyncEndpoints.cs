@@ -44,26 +44,26 @@ public static class CorpusSyncEndpoints
 
         try
         {
-            await foreach (var progress in syncService.SyncAsync(corpusDir, ct).ConfigureAwait(false))
+            await foreach (var progress in syncService.SyncAsync(corpusDir, ct))
             {
                 var status = progress.Skipped ? "skipped" : "synced";
                 await context.Response.WriteAsync(
-                    $"data: [{status}] {progress.SourceFile} ({progress.ChunkCount} chunks)\n\n", ct).ConfigureAwait(false);
-                await context.Response.Body.FlushAsync(ct).ConfigureAwait(false);
+                    $"data: [{status}] {progress.SourceFile} ({progress.ChunkCount} chunks)\n\n", ct);
+                await context.Response.Body.FlushAsync(ct);
             }
 
-            await context.Response.WriteAsync("data: [DONE]\n\n", ct).ConfigureAwait(false);
+            await context.Response.WriteAsync("data: [DONE]\n\n", ct);
         }
         catch (OperationCanceledException)
         {
-            await context.Response.WriteAsync("data: [CANCELLED]\n\n", CancellationToken.None).ConfigureAwait(false);
+            await context.Response.WriteAsync("data: [CANCELLED]\n\n", CancellationToken.None);
         }
         catch (Exception ex)
         {
-            await context.Response.WriteAsync($"data: [ERROR] {ex.Message}\n\n", CancellationToken.None).ConfigureAwait(false);
+            await context.Response.WriteAsync($"data: [ERROR] {ex.Message}\n\n", CancellationToken.None);
         }
 
-        await context.Response.Body.FlushAsync(CancellationToken.None).ConfigureAwait(false);
+        await context.Response.Body.FlushAsync(CancellationToken.None);
         return Results.Empty;
     }
 
@@ -80,7 +80,7 @@ public static class CorpusSyncEndpoints
         if (string.IsNullOrWhiteSpace(request.SourcePath) || string.IsNullOrWhiteSpace(request.Content))
             return Results.BadRequest("sourcePath and content are required");
 
-        var result = await syncService.UpsertDocumentAsync(request.SourcePath, request.Content, ct).ConfigureAwait(false);
+        var result = await syncService.UpsertDocumentAsync(request.SourcePath, request.Content, ct);
 
         var embedded = 0;
         if (request.Embed && !result.Skipped)
@@ -88,14 +88,14 @@ public static class CorpusSyncEndpoints
             var metadata = new DocumentMetadata(request.SourcePath, null, []);
             var chunks = chunker.Chunk(request.Content, metadata);
 
-            var probe = await embedder.EmbedAsync("probe", ct).ConfigureAwait(false);
-            await vectorStore.EnsureCollectionAsync(probe.Length, ct).ConfigureAwait(false);
+            var probe = await embedder.EmbedAsync("probe", ct);
+            await vectorStore.EnsureCollectionAsync(probe.Length, ct);
 
             foreach (var chunk in chunks)
             {
-                var embedding = await embedder.EmbedAsync(chunk.Text, ct).ConfigureAwait(false);
+                var embedding = await embedder.EmbedAsync(chunk.Text, ct);
                 var embeddedChunk = new EmbeddedChunk(chunk, embedding);
-                await vectorStore.UpsertAsync(embeddedChunk, ct).ConfigureAwait(false);
+                await vectorStore.UpsertAsync(embeddedChunk, ct);
                 embedded++;
             }
         }
@@ -114,7 +114,7 @@ public static class CorpusSyncEndpoints
         ICorpusRepository repository,
         CancellationToken ct)
     {
-        var docs = await repository.GetAllDocumentsAsync(ct).ConfigureAwait(false);
+        var docs = await repository.GetAllDocumentsAsync(ct);
 
         return Results.Ok(docs.Select(d => new
         {
@@ -133,8 +133,7 @@ public static class CorpusSyncEndpoints
         ICorpusRepository repository,
         CancellationToken ct)
     {
-        var docs = await repository.GetAllDocumentsAsync(ct).ConfigureAwait(false);
-        var doc = docs.FirstOrDefault(d => d.Id == id);
+        var doc = await repository.GetDocumentByIdAsync(id, ct);
         if (doc is null) return Results.NotFound();
 
         return Results.Ok(new

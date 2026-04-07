@@ -46,7 +46,7 @@ public sealed class CachingChatOrchestrator : IChatOrchestrator
     {
         var totalTimer = Stopwatch.StartNew();
 
-        var threat = await _classifier.ClassifyAsync(request.Message, ct).ConfigureAwait(false);
+        var threat = await _classifier.ClassifyAsync(request.Message, ct);
         if (threat.IsThreat)
         {
             _logger.LogWarning("Threat detected (score {Score}) for query hash {Hash}",
@@ -64,7 +64,7 @@ public sealed class CachingChatOrchestrator : IChatOrchestrator
                 IsThreat = true,
                 ThreatScore = threat.ThreatScore,
                 TotalMs = totalTimer.Elapsed.TotalMilliseconds
-            }, ct).ConfigureAwait(false);
+            }, ct);
 
             return new ChatResult(SingleChunk(ChatResponses.Unrelated, ct), threat.ThreatScore, true, false);
         }
@@ -73,7 +73,7 @@ public sealed class CachingChatOrchestrator : IChatOrchestrator
 
         if (_cacheOptions.Enabled)
         {
-            var cached = await _interactions.FindCachedResponseAsync(queryHash, ct).ConfigureAwait(false);
+            var cached = await _interactions.FindCachedResponseAsync(queryHash, ct);
             if (cached is not null)
             {
                 _logger.LogDebug("Cache hit for query hash {Hash}", queryHash);
@@ -89,18 +89,13 @@ public sealed class CachingChatOrchestrator : IChatOrchestrator
                     QueryHash = queryHash,
                     CacheHit = true,
                     TotalMs = totalTimer.Elapsed.TotalMilliseconds
-                }, ct).ConfigureAwait(false);
+                }, ct);
 
                 return new ChatResult(SingleChunk(cached.ResponseText, ct), 0, false, true);
             }
         }
 
-        var payload = await _transformer.TransformAsync(request, ct).ConfigureAwait(false);
-        if (payload is null)
-        {
-            _logger.LogError("Query transformer returned null for message hash {Hash}", queryHash);
-            return new ChatResult(SingleChunk(ChatResponses.ServerError, ct), 0, false, false);
-        }
+        var payload = await _transformer.TransformAsync(request, ct);
 
         var (providerName, modelName) = _responseProvider is ICompletionMetadata meta
             ? (meta.Provider, meta.Model)
@@ -122,7 +117,7 @@ public sealed class CachingChatOrchestrator : IChatOrchestrator
         var completionTimer = Stopwatch.StartNew();
         var responseBuilder = new StringBuilder();
 
-        await foreach (var token in _responseProvider.GetResponseAsync(payload, ct).ConfigureAwait(false))
+        await foreach (var token in _responseProvider.GetResponseAsync(payload, ct))
         {
             responseBuilder.Append(token);
             yield return token;
@@ -155,14 +150,14 @@ public sealed class CachingChatOrchestrator : IChatOrchestrator
             ModelName = modelName,
             QueryHash = queryHash,
             ExpiresAt = expiresAt
-        }, ct).ConfigureAwait(false);
+        }, ct);
     }
 
     private static async IAsyncEnumerable<string> SingleChunk(
         string value,
         [EnumeratorCancellation] CancellationToken ct = default)
     {
-        await Task.CompletedTask.ConfigureAwait(false);
+        await Task.CompletedTask;
         ct.ThrowIfCancellationRequested();
         yield return value;
     }

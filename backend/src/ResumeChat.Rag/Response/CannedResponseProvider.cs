@@ -12,7 +12,7 @@ public sealed class CannedResponseProvider : IResponseProvider
         foreach (var word in payload.OriginalMessage.Split(' '))
         {
             cancellationToken.ThrowIfCancellationRequested();
-            await Task.Delay(50, cancellationToken).ConfigureAwait(false);
+            await Task.Delay(50, cancellationToken);
             yield return word + " ";
         }
     }

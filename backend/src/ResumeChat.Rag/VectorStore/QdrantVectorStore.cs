@@ -30,7 +30,7 @@ public sealed class QdrantVectorStore : IVectorStore
     {
         var url = $"{BaseUrl}/collections/{_options.CollectionName}";
 
-        var check = await _httpClient.GetAsync(url, cancellationToken).ConfigureAwait(false);
+        var check = await _httpClient.GetAsync(url, cancellationToken);
         if (check.IsSuccessStatusCode)
         {
             _logger.LogDebug("Collection {Collection} already exists", _options.CollectionName);
@@ -49,7 +49,7 @@ public sealed class QdrantVectorStore : IVectorStore
             }
         };
 
-        var response = await _httpClient.PutAsJsonAsync(url, body, cancellationToken).ConfigureAwait(false);
+        var response = await _httpClient.PutAsJsonAsync(url, body, cancellationToken);
         response.EnsureSuccessStatusCode();
     }
 
@@ -79,7 +79,7 @@ public sealed class QdrantVectorStore : IVectorStore
         };
 
         var url = $"{BaseUrl}/collections/{_options.CollectionName}/points";
-        var response = await _httpClient.PutAsJsonAsync(url, point, cancellationToken).ConfigureAwait(false);
+        var response = await _httpClient.PutAsJsonAsync(url, point, cancellationToken);
         response.EnsureSuccessStatusCode();
     }
 
@@ -107,11 +107,10 @@ public sealed class QdrantVectorStore : IVectorStore
         };
 
         var url = $"{BaseUrl}/collections/{_options.CollectionName}/points/search";
-        var response = await _httpClient.PostAsJsonAsync(url, body, cancellationToken).ConfigureAwait(false);
+        var response = await _httpClient.PostAsJsonAsync(url, body, cancellationToken);
         response.EnsureSuccessStatusCode();
 
-        var result = await response.Content.ReadFromJsonAsync<QdrantSearchResponse>(cancellationToken)
-            .ConfigureAwait(false);
+        var result = await response.Content.ReadFromJsonAsync<QdrantSearchResponse>(cancellationToken);
 
         if (result?.Result is null)
         {
@@ -135,7 +134,7 @@ public sealed class QdrantVectorStore : IVectorStore
                 .Select(r =>
                 {
                     var truncStored = TruncateAndNormalize(r.Vector.AsSpan(), dims);
-                    var cosine = CosineSimilarity(truncQuery, truncStored);
+                    var cosine = DotProduct(truncQuery, truncStored);
                     return (Result: r, Score: cosine);
                 })
                 .OrderByDescending(x => x.Score)
@@ -198,31 +197,24 @@ public sealed class QdrantVectorStore : IVectorStore
         return truncated;
     }
 
-    private static float CosineSimilarity(float[] a, float[] b)
+    // Both inputs are L2-normalized by TruncateAndNormalize, so cosine similarity = dot product
+    private static float DotProduct(float[] a, float[] b)
     {
         var dot = 0f;
-        var normA = 0f;
-        var normB = 0f;
         for (var j = 0; j < a.Length; j++)
-        {
             dot += a[j] * b[j];
-            normA += a[j] * a[j];
-            normB += b[j] * b[j];
-        }
-
-        var denom = MathF.Sqrt(normA) * MathF.Sqrt(normB);
-        return denom > 0 ? dot / denom : 0;
+        return dot;
     }
 
     public async Task<CollectionInfo> GetCollectionInfoAsync(CancellationToken cancellationToken = default)
     {
         var url = $"{BaseUrl}/collections/{_options.CollectionName}";
-        var response = await _httpClient.GetAsync(url, cancellationToken).ConfigureAwait(false);
+        var response = await _httpClient.GetAsync(url, cancellationToken);
 
         if (!response.IsSuccessStatusCode)
             return new CollectionInfo(_options.CollectionName, 0, 0);
 
-        var json = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken).ConfigureAwait(false);
+        var json = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken);
         var result = json.GetProperty("result");
 
         var pointCount = result.GetProperty("points_count").GetInt64();

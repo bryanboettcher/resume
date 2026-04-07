@@ -7,34 +7,40 @@ internal sealed class CorpusRepository(IDbContextFactory<ResumeChatDbContext> co
 {
     public async Task<IReadOnlyList<CorpusDocumentEntity>> GetAllDocumentsAsync(CancellationToken ct = default)
     {
-        await using var context = await contextFactory.CreateDbContextAsync(ct).ConfigureAwait(false);
+        await using var context = await contextFactory.CreateDbContextAsync(ct);
 
         return await context.CorpusDocuments
             .Include(d => d.Chunks)
             .OrderBy(d => d.SourceFile)
-            .ToListAsync(ct)
-            .ConfigureAwait(false);
+            .ToListAsync(ct);
+    }
+
+    public async Task<CorpusDocumentEntity?> GetDocumentByIdAsync(long id, CancellationToken ct = default)
+    {
+        await using var context = await contextFactory.CreateDbContextAsync(ct);
+
+        return await context.CorpusDocuments
+            .Include(d => d.Chunks)
+            .FirstOrDefaultAsync(d => d.Id == id, ct);
     }
 
     public async Task<CorpusDocumentEntity?> GetDocumentByPathAsync(string sourcePath, CancellationToken ct = default)
     {
-        await using var context = await contextFactory.CreateDbContextAsync(ct).ConfigureAwait(false);
+        await using var context = await contextFactory.CreateDbContextAsync(ct);
 
         return await context.CorpusDocuments
             .Include(d => d.Chunks)
-            .FirstOrDefaultAsync(d => d.SourceFile == sourcePath, ct)
-            .ConfigureAwait(false);
+            .FirstOrDefaultAsync(d => d.SourceFile == sourcePath, ct);
     }
 
     public async Task UpsertDocumentAsync(CorpusDocumentEntity document, IReadOnlyList<CorpusChunkEntity> chunks, CancellationToken ct = default)
     {
-        await using var context = await contextFactory.CreateDbContextAsync(ct).ConfigureAwait(false);
-        await using var transaction = await context.Database.BeginTransactionAsync(ct).ConfigureAwait(false);
+        await using var context = await contextFactory.CreateDbContextAsync(ct);
+        await using var transaction = await context.Database.BeginTransactionAsync(ct);
 
         var existing = await context.CorpusDocuments
             .Include(d => d.Chunks)
-            .FirstOrDefaultAsync(d => d.SourceFile == document.SourceFile, ct)
-            .ConfigureAwait(false);
+            .FirstOrDefaultAsync(d => d.SourceFile == document.SourceFile, ct);
 
         if (existing is not null)
         {
@@ -45,7 +51,7 @@ internal sealed class CorpusRepository(IDbContextFactory<ResumeChatDbContext> co
             existing.LastModified = document.LastModified;
 
             context.CorpusChunks.RemoveRange(existing.Chunks);
-            await context.SaveChangesAsync(ct).ConfigureAwait(false);
+            await context.SaveChangesAsync(ct);
 
             foreach (var chunk in chunks)
                 chunk.DocumentId = existing.Id;
@@ -56,7 +62,7 @@ internal sealed class CorpusRepository(IDbContextFactory<ResumeChatDbContext> co
         {
             document.Chunks.Clear();
             context.CorpusDocuments.Add(document);
-            await context.SaveChangesAsync(ct).ConfigureAwait(false);
+            await context.SaveChangesAsync(ct);
 
             foreach (var chunk in chunks)
                 chunk.DocumentId = document.Id;
@@ -64,19 +70,19 @@ internal sealed class CorpusRepository(IDbContextFactory<ResumeChatDbContext> co
             context.CorpusChunks.AddRange(chunks);
         }
 
-        await context.SaveChangesAsync(ct).ConfigureAwait(false);
-        await transaction.CommitAsync(ct).ConfigureAwait(false);
+        await context.SaveChangesAsync(ct);
+        await transaction.CommitAsync(ct);
     }
 
     public async Task<int> GetDocumentCountAsync(CancellationToken ct = default)
     {
-        await using var context = await contextFactory.CreateDbContextAsync(ct).ConfigureAwait(false);
-        return await context.CorpusDocuments.CountAsync(ct).ConfigureAwait(false);
+        await using var context = await contextFactory.CreateDbContextAsync(ct);
+        return await context.CorpusDocuments.CountAsync(ct);
     }
 
     public async Task<int> GetChunkCountAsync(CancellationToken ct = default)
     {
-        await using var context = await contextFactory.CreateDbContextAsync(ct).ConfigureAwait(false);
-        return await context.CorpusChunks.CountAsync(ct).ConfigureAwait(false);
+        await using var context = await contextFactory.CreateDbContextAsync(ct);
+        return await context.CorpusChunks.CountAsync(ct);
     }
 }

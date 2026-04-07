@@ -22,7 +22,9 @@ public static class ServiceCollectionExtensions
             .ValidateOnStart();
 
         services.AddOptions<CacheOptions>()
-            .BindConfiguration(CacheOptions.SectionName);
+            .BindConfiguration(CacheOptions.SectionName)
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
 
         services.AddPooledDbContextFactory<ResumeChatDbContext>((sp, optionsBuilder) =>
         {

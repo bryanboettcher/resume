@@ -34,12 +34,11 @@ public sealed class OllamaEmbeddingProvider : IEmbeddingProvider
         var response = await _httpClient.PostAsJsonAsync(
             $"{_options.BaseUrl.TrimEnd('/')}/api/embed",
             request,
-            cancellationToken).ConfigureAwait(false);
+            cancellationToken);
 
         response.EnsureSuccessStatusCode();
 
-        var result = await response.Content.ReadFromJsonAsync<OllamaEmbedResponse>(cancellationToken)
-            .ConfigureAwait(false);
+        var result = await response.Content.ReadFromJsonAsync<OllamaEmbedResponse>(cancellationToken);
 
         if (result?.Embeddings is not { Count: > 0 })
             throw new InvalidOperationException("Ollama returned no embeddings.");
