@@ -47,9 +47,7 @@ services:
       Corpus__Directory: /app/corpus
       Postgres__ConnectionString: Host=postgres;Port=5432;Database=resumechat;Username=resumechat;Password=resumechat
     volumes:
-      - ./evidence:/app/corpus/evidence:ro
-      - ./projects:/app/corpus/projects:ro
-      - ./links:/app/corpus/links:ro
+      - ./corpus:/app/corpus:ro
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:

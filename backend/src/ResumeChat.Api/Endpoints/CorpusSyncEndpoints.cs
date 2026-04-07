@@ -34,11 +34,12 @@ public static class CorpusSyncEndpoints
         CorpusSyncService syncService,
         IOptions<CorpusOptions> corpusOptions,
         HttpContext context,
+        ILogger<CorpusSyncService> logger,
         CancellationToken ct)
     {
         var corpusDir = corpusOptions.Value.Directory;
         if (!Directory.Exists(corpusDir))
-            return Results.Problem($"Corpus directory not found: {corpusDir}", statusCode: 500);
+            return Results.Problem("Corpus directory not configured or missing", statusCode: 500);
 
         context.Response.ContentType = "text/event-stream";
 
@@ -60,7 +61,8 @@ public static class CorpusSyncEndpoints
         }
         catch (Exception ex)
         {
-            await context.Response.WriteAsync($"data: [ERROR] {ex.Message}\n\n", CancellationToken.None);
+            logger.LogError(ex, "Corpus sync failed");
+            await context.Response.WriteAsync("data: [ERROR] Sync failed\n\n", CancellationToken.None);
         }
 
         await context.Response.Body.FlushAsync(CancellationToken.None);
@@ -79,6 +81,9 @@ public static class CorpusSyncEndpoints
     {
         if (string.IsNullOrWhiteSpace(request.SourcePath) || string.IsNullOrWhiteSpace(request.Content))
             return Results.BadRequest("sourcePath and content are required");
+
+        if (request.SourcePath.Contains("..") || Path.IsPathRooted(request.SourcePath) || request.SourcePath.Contains("://"))
+            return Results.BadRequest("sourcePath must be a relative path within the corpus");
 
         var result = await syncService.UpsertDocumentAsync(request.SourcePath, request.Content, ct);
 

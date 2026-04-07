@@ -12,5 +12,8 @@ backend/**/*.user
 .env
 appsettings.*.json
 !appsettings.json
-!appsettings.Development.json
 frontend/api/config.php
+
+## Dev artifacts
+baseline-results.md
+interactions-export-*.json

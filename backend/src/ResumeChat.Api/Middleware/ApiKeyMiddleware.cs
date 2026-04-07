@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+using System.Text;
 using Microsoft.Extensions.Options;
 using ResumeChat.Api.Options;
 
@@ -8,7 +10,7 @@ public sealed class ApiKeyMiddleware(
     IOptions<ApiKeyOptions> options,
     ILogger<ApiKeyMiddleware> logger)
 {
-    private readonly string _configuredKey = options.Value.Key;
+    private readonly byte[] _configuredKeyBytes = Encoding.UTF8.GetBytes(options.Value.Key);
 
     public async Task InvokeAsync(HttpContext context)
     {
@@ -25,7 +27,7 @@ public sealed class ApiKeyMiddleware(
         }
 
         var providedKey = context.Request.Headers["X-Api-Key"].FirstOrDefault();
-        if (providedKey != _configuredKey)
+        if (!IsKeyValid(providedKey))
         {
             logger.LogWarning("API key auth failed for {Path}", context.Request.Path);
             context.Response.StatusCode = StatusCodes.Status401Unauthorized;
@@ -33,5 +35,17 @@ public sealed class ApiKeyMiddleware(
         }
 
         await next(context);
+    }
+
+    private bool IsKeyValid(string? providedKey)
+    {
+        if (providedKey is null)
+            return false;
+
+        var byteCount = Encoding.UTF8.GetByteCount(providedKey);
+        Span<byte> providedBytes = stackalloc byte[byteCount];
+        Encoding.UTF8.GetBytes(providedKey, providedBytes);
+
+        return CryptographicOperations.FixedTimeEquals(providedBytes, _configuredKeyBytes);
     }
 }

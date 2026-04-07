@@ -24,12 +24,13 @@ public static class IngestionEndpoints
         IIngestionPipeline pipeline,
         IOptions<CorpusOptions> corpusOptions,
         HttpContext context,
+        ILogger<IngestionService> logger,
         CancellationToken ct)
     {
         var corpusDir = corpusOptions.Value.Directory;
         var isDbBacked = pipeline is not Rag.Ingestion.CorpusIngestionPipeline;
         if (!isDbBacked && !Directory.Exists(corpusDir))
-            return Results.Problem($"Corpus directory not found: {corpusDir}", statusCode: 500);
+            return Results.Problem("Corpus directory not configured or missing", statusCode: 500);
 
         context.Response.ContentType = "text/event-stream";
 
@@ -50,7 +51,8 @@ public static class IngestionEndpoints
         }
         catch (Exception ex)
         {
-            await context.Response.WriteAsync($"data: [ERROR] {ex.Message}\n\n", CancellationToken.None);
+            logger.LogError(ex, "Ingestion failed");
+            await context.Response.WriteAsync("data: [ERROR] Ingestion failed\n\n", CancellationToken.None);
         }
 
         await context.Response.Body.FlushAsync(CancellationToken.None);

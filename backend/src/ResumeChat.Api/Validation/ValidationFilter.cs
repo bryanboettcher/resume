@@ -12,7 +12,7 @@ public sealed class ValidationFilter<T>(IValidator<T> validator) : IEndpointFilt
 
         var result = await validator.ValidateAsync(argument);
         if (!result.IsValid)
-            return Results.BadRequest(result.Errors.Select(e => e.ErrorMessage));
+            return Results.BadRequest(result.Errors[0].ErrorMessage);
 
         return await next(context);
     }
