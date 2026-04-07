@@ -45,7 +45,7 @@
 // === SUMMARY ===
 #section("Summary")
 
-Software engineer with 25+ years of experience building and modernizing production systems. Track record of taking legacy platforms through ground-up rewrites --- most recently a direct mail platform processing 30M recipients across 10--15M unique addresses. Deep .NET ecosystem expertise from Framework 1.x through .NET 10, with hands-on performance work (SIMD, zero-allocation patterns, benchmark-driven optimization). Recently built a RAG chatbot pipeline from scratch --- vector search, streaming inference, layered prompt injection defense --- to make this resume queryable. Active open source contributor with merged PRs across 5 projects including MassTransit, Klipper, and LINSTOR. Comfortable across the full delivery stack --- from Angular frontends to Kubernetes infrastructure to custom PCB design. Seeking roles where complex technical problems need pragmatic, shipped solutions --- not committees.
+Software engineer with 25+ years of experience delivering measurable outcomes on legacy platforms that couldn't be patched into viability. Ground-up rewrites of production systems --- most recently a direct mail platform where a crash-prone import pipeline and 15% false-unique deduplication rate were directly wasting postage spend and creating legal exposure. Deep .NET ecosystem expertise from Framework 1.x through .NET 10, with hands-on performance work (SIMD, zero-allocation patterns, benchmark-driven optimization). Recently built a production RAG chatbot from scratch --- vector search, streaming inference, layered prompt injection defense. Active open source contributor with merged PRs across 5 projects including MassTransit, Klipper, and LINSTOR. Comfortable across the full delivery stack --- Angular frontends to Kubernetes infrastructure to custom PCB design. Seeking roles where engineering investment has a clear line to business outcomes.
 
 // === SKILLS ===
 #section("Technical Skills")
@@ -73,11 +73,11 @@ Software engineer with 25+ years of experience building and modernizing producti
   "Senior/Lead Engineer",
   "Jun 2024 -- Oct 2025",
   [
-    - Assessed legacy Node.js/Express platform and led ground-up rewrite to .NET 10, expanding from 45 features across 9 domains to 100+ features across 12 domains
-    - Designed multi-source ETL pipeline processing 30M recipients and 10--15M unique addresses with USPS-certified normalization
-    - Achieved \<10 sec imports for 50K-row datasets, \<100ns address lookups via CRC64 hash-based deduplication and in-memory caching
-    - Built architecture that enabled team members to ship independently --- lead developer contributed 2.5x the commit volume on established patterns
-    - Managed work across Jira and Trello with Fibonacci sizing, 3-point story caps, and burndown tracking; adapted tooling to team context across roles
+    - Replaced crash-prone Node.js pipeline that corrupted reports on every transient failure; .NET 10 rewrite with saga-orchestrated recovery eliminated developer intervention and enabled concurrent imports
+    - Fixed 15% false-unique deduplication rate, reducing wasted postage at \$0.20/piece, reclaiming batch slots for higher-response leads, and eliminating excessive-contact legal exposure
+    - Replaced 26-column VARCHAR schema with typed models --- enabled real SQL aggregations, unified report structure eliminated SQL injection and N+1 bug classes
+    - 3-person team shipped 100+ features across 12 domains in 16 months; architecture patterns enabled lead developer to contribute 2.5x commit volume independently
+    - Multi-source ETL processing 30M recipients and 10--15M unique addresses; \<10 sec imports for 50K-row datasets on modest hardware, avoiding infrastructure expansion
   ]
 )
 
@@ -86,11 +86,10 @@ Software engineer with 25+ years of experience building and modernizing producti
   "Software Architect",
   "2023 -- Oct 2025",
   [
-    - Added urgent huntgroup calling, rule-based on-call scheduling, and facial recognition authentication to iOS-deployed mental health platform
-    - Implemented real-time clinical updates via SignalR serving clinicians, patients, and emergency responders
-    - Designed mobile device management platform for administrative operations of the clinical system
-    - Built scheduled prescription drug pricing engine synchronizing disparate manufacturer sources for small pharmacy real-time lookups
-    - Delivered across Azure stack: App Service, Container Apps, Azure SQL, Service Bus, Communications Services, AI Services
+    - Integrated AI speech-to-text and session summarization into behavioral health platform, reducing clinician documentation time and improving note accuracy
+    - Built huntgroup calling, on-call scheduling, and real-time SignalR updates for clinicians, patients, and emergency responders
+    - Designed MDM platform alongside Jamf, filling hierarchical device grouping gaps for multi-location clinical operations
+    - Delivered pharmacy product absorption including NCPDP/DSCSA compliance, drug pricing engine, and prescription management across Azure stack
   ]
 )
 
@@ -99,12 +98,10 @@ Software engineer with 25+ years of experience building and modernizing producti
   "Software Architect",
   "2020 -- 2023",
   [
-    - Promoted from Senior Developer to Architect after identifying fundamental code quality and process issues in legacy telecom billing platform
-    - Established coding standards, source control practices, and modern tooling across the development team
-    - Isolated legacy components as black boxes and reimplemented with modern techniques, backed by acceptance suites written against existing behavior
-    - Replaced legacy Win32 C++ components with extensible C\# implementations, achieving 4--5x performance improvements over the originals
-    - Encapsulated domain boundaries into injectable, cloud-first services --- eliminating on-prem hosting dependency and enabling team scale-out
-    - Achieved 85% unit test coverage and 95% integration test coverage across modernized codebase
+    - Promoted to Architect after identifying Win32 C++ COM lock-in forcing Windows-only hosting, blocking new clients, and making rule changes prohibitively risky
+    - Replaced Win32 components with C\# rules engine, eliminating datacenter dependency and unblocking sales to clients with Linux hosting requirements
+    - Reactive/eventing architecture enabled rules to be added, chained, parallelized, and tested in isolation; 4--5x performance over originals on existing hardware
+    - Built acceptance suites against existing behavior, documenting all rule logic and tuning to match actual customer expectations; 85% unit / 95% integration coverage
   ]
 )
 
@@ -113,8 +110,9 @@ Software engineer with 25+ years of experience building and modernizing producti
   "Senior Developer",
   "2018 -- 2020",
   [
-    - Modernized development practices --- introduced CI/CD, automated testing, coding standards, and mentored junior developers
-    - Developed and open-sourced a distributed, queue-driven data processing architecture
+    - First full-time developer at a printing company that had relied entirely on expensive third-party consultants; reduced integration time for new clients from months to weeks
+    - Built shared pipeline core so all client integrations ran on a common system instead of independent one-offs, reducing ongoing maintenance surface
+    - Introduced git, PRs, code reviews, CI/CD, and sprint-based delivery practices where none existed; the company grew and was subsequently acquired by Mittera
   ]
 )
 
@@ -123,8 +121,8 @@ Software engineer with 25+ years of experience building and modernizing producti
   "Senior Developer",
   "2016 -- 2018",
   [
-    - Diagnosed and resolved performance issues, improving application response times by 80%
-    - Implemented ElasticSearch-based search system and mentored junior developers through code reviews and pair programming
+    - Reduced customer satisfaction analytics from minutes to seconds on existing infrastructure, enabling operations team to act on feedback without waiting for batch reports
+    - Implemented Elasticsearch-based search across survey response corpus; mentored junior developers through code reviews and pair programming
   ]
 )
 
@@ -175,8 +173,7 @@ Contributed complete ADO.NET saga persistence implementations for MySQL, Postgre
 #v(6pt)
 
 *Performance Engineering:*
-Designed a semantic address matching engine targeting sub-500-nanosecond comparison latency at 1--2 million operations per second, using a four-stage progressive elimination pipeline: exact constraint matching eliminates 95% of candidates, CRC64 hash comparison at approximately one CPU cycle, token-based analysis at approximately 50 cycles, and SIMD-accelerated 128-dimensional vector cosine similarity at approximately 200 cycles. Implementation employs zero-allocation patterns throughout --- stackalloc, Span\<T\>, cache-line-aligned structures, and bit-packed metadata --- validated through custom BenchmarkDotNet harnesses measuring before and after at each optimization stage.
-
+Designed a semantic address matching engine targeting sub-500-nanosecond comparison latency at 1--2 million operations per second, using a four-stage progressive elimination pipeline: exact constraint matching eliminates 95% of candidates, CRC64 hash comparison at approximately one CPU cycle, token-based analysis at approximately 50 cycles, and SIMD-accelerated 128-dimensional vector cosine similarity at approximately 200 cycles. Implementation employs zero-allocation patterns throughout --- stackalloc, Span\<T\>, cache-line-aligned structures, and bit-packed metadata --- validated through custom BenchmarkDotNet harnesses measuring before and after at each optimization stage. 
 #v(6pt)
 
 *Open Source Engagement:*

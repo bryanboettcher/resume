@@ -81,6 +81,8 @@ V8 (Microsoft.ClearScript) for user-configurable field transformations during im
 | API writes | <500ms p95 | Met |
 | Memory (web app) | <2 GB container | 650MB typical / 900MB peak |
 
+All performance targets were met on modest hardware without infrastructure expansion — the optimization work was explicitly chosen over expensive hardware scaling.
+
 ## Technology Stack
 
 **Backend:** .NET 9, C# 13, ASP.NET Core Minimal APIs, MassTransit, Dapper, EF Core, SQL Server 2022, RabbitMQ, SqlBulkCopy, Sep, Sylvan, ClosedXML, FluentFTP, FluentValidation, OpenTelemetry, Lamar IoC, Hangfire, .NET Aspire
@@ -95,9 +97,23 @@ V8 (Microsoft.ClearScript) for user-configurable field transformations during im
 
 3-person team. Bryan: architecture + infrastructure + mentoring (426 commits). Sophie Walker: primary feature development (1,052 commits). Lillian Fleming: junior contributions (18 commits). Bryan designed the architectural patterns and pipeline frameworks that enabled Sophie's high-velocity feature development.
 
+## Business Impact
+
+The Node.js system had three concrete operational problems that motivated the rewrite:
+
+**Reliability:** Any transient error — a single API timeout, a network blip — crashed the import process and left data half-imported. Recovering required developer intervention. Until someone manually fixed the state, all downstream reports were corrupted. This happened regularly at ~20 imports/month.
+
+**Throughput:** There was no queuing. Imports had to be run one at a time and babysitted. Large batches created enormous operations backlogs. The saga-based rewrite allows concurrent imports with automatic fault recovery and no manual state repair.
+
+**Deduplication accuracy:** The legacy system deduplicated on `address1 + zipcode` only — a 15% false-unique rate on real data. Direct mail batches are round numbers (50,000 recipients). Dedup failures don't just waste postage on duplicates — they displace better-performing leads from those slots. At $0.20/piece postage plus mailer production costs, the math is straightforward. There's also a legal dimension: industry standard is ~3 contacts per lead over 3 months. Dedup failures inflate contact counts against the same household, creating regulatory exposure.
+
+The CRC64 hash-based deduplication against 10–15M addresses, combined with the 17-flag bitwise address metadata enum, eliminated the false-unique problem and gave the business the foundation for accurate deliverability and contact-frequency tracking.
+
+**Schema quality:** The legacy system had 26 nullable VARCHAR columns with no typed data. Reports used `TRY_CONVERT` everywhere. Inline HTML was generated per endpoint. This propagated SQL injection surface area and N+1 query patterns across every report. The rewrite introduced proper datatypes — enabling actual SQL math instead of `TRY_CONVERT` chains — and a single shared report structure that eliminated the per-endpoint bug surface entirely.
+
 ## Legacy System Context
 
-The rewrite expanded the system from 45 features across 9 domains (Node.js/Express) to 100+ features across 12 domains (.NET 9), with a 60% feature overlap and 40% net-new capabilities. The architectural upgrade introduced MassTransit saga orchestration, generic pipeline framework, address normalization caching, and comprehensive testing infrastructure not present in the original system.
+The rewrite expanded the system from 45 features across 9 domains (Node.js/Express) to 100+ features across 12 domains (.NET 9), with a 60% feature overlap and 40% net-new capabilities. The operational problems above — crash-on-any-error imports, no concurrency, 15% dedup false-unique rate, untyped schema — were the direct motivation. The architectural upgrade introduced MassTransit saga orchestration, generic pipeline framework, address normalization caching, and comprehensive testing infrastructure not present in the original system.
 
 ## Advanced Patterns (from branch analysis)
 

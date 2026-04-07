@@ -28,6 +28,16 @@ The Direct Mail subsystem is the core business domain within the Madera platform
 
 This is not a simple CRUD application. A single import of 50,000–500,000 recipient records must be staged into SQL Server, have its addresses matched against 10–15 million existing records, send any unknown addresses through external USPS normalization, migrate verified data into production tables, and then become available for mail file selection — all orchestrated through MassTransit saga state machines over RabbitMQ. The system processes approximately 20 imports per month and manages 30 million total recipients.
 
+## Why This System Was Built
+
+The predecessor system had three operational problems that directly cost the business money:
+
+**Reliability:** A single transient error — API timeout, network blip — crashed the entire import and left data half-imported. Reports were corrupted until a developer manually repaired state. With ~20 imports per month this was a recurring operational tax.
+
+**Deduplication accuracy:** The legacy system matched on `address1 + zipcode` only, producing a ~15% false-unique rate. Mail batches are fixed sizes (50,000 recipients). Dedup failures don't just waste postage — they displace higher-performing leads from those slots. At $0.20/piece plus mailer production costs, and with industry contact-frequency regulations (~3 contacts per lead over 3 months), the consequences are both financial and legal.
+
+**Throughput:** No queuing meant imports ran one at a time with manual oversight. Large batches created backlogs. The MassTransit saga design enables concurrent imports with automatic fault recovery.
+
 ## Domain Model
 
 The Direct Mail domain centers on a handful of core entities connected through a publisher/broker hierarchy: **Publishers** supply lead lists, **Brokers** act as intermediaries, **Verticals** represent market segments, **Mail Houses** are the physical printers, and **Creatives** represent the mail piece design. These appear as strongly-typed message contract base interfaces in `Madera.Contracts.Messages.DirectMail.Core`.

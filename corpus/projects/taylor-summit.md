@@ -138,12 +138,26 @@ Forked and extended the official Dapper.Contrib with column-level dirty tracking
 
 **Testing:** NUnit, comprehensive saga testing (18+ test files for DeviceManagement alone)
 
+## Business Context
+
+Each domain at Taylor Summit had a specific business driver:
+
+**Pharmacy platform:** The platform was absorbing another acquired product — integration/absorption work, not greenfield development. The NCPDP Telecommunications implementation, SureScripts e-prescribing, and DSCSA/GS1 traceability were all compliance-deadline regulatory requirements. Missing a regulatory deadline in pharmacy has licensure consequences.
+
+**Clinical speech-to-text/summarization:** Real-time transcription and AI-powered note generation saved several minutes per clinical session and increased accuracy of clinical notes. In a behavioral health setting with high session volume, clinician time is the primary cost constraint. More accurate notes also reduce administrative rework.
+
+**MDM server:** This was built to sit alongside Jamf — it filled gaps in hierarchical device grouping that Jamf didn't support for multi-location distribution. Organizations managing device fleets across many physical locations with complex group structures needed capabilities Jamf couldn't provide.
+
+**Medical device tracking rearchitecture — honest assessment:** The event-sourced saga system was rearchitected from imperative CRUD (330 files) to MassTransit sagas (126 files). The architecture was technically sound — 60% code reduction, proper compensation, full audit capabilities. However, it was ultimately scrapped after Bryan's departure, deemed too complex for the team that inherited it. The lesson: architectural sophistication has to be calibrated to the team that will maintain it. A correct architecture that a team can't operate isn't a net win.
+
+**Role constraints:** This was a consulting/architect role with pre-scoped assignments. Bryan was not setting product strategy — he was executing design and implementation within requirements handed down by the client organizations. The technical decisions (protocol implementations, saga design, AI integrations) were Bryan's; the scope and priorities were not.
+
 ## Significance for Resume
 
-- **Regulated domain expertise:** FDA drug traceability (DSCSA), DEA controlled substances (PMP), healthcare compliance — demonstrates ability to work in highly regulated environments
+- **Regulated domain expertise:** FDA drug traceability (DSCSA), DEA controlled substances (PMP), healthcare compliance — demonstrates ability to work in highly regulated environments with real deadline consequences
 - **Protocol implementation depth:** NCPDP binary protocol, Apple MDM protocol, GS1/EPCIS XML — shows ability to implement complex standards from specification documents
 - **PKI/Security engineering:** Full certificate chain management, self-signed CA, device identity certs — deep cryptography/security work beyond typical application development
-- **Applied AI in healthcare:** Facial recognition, real-time transcription, clinical summarization — AI in a regulated context, not generic chatbot work
-- **Architecture evolution:** CRUD → event-sourced sagas with 60% code reduction — demonstrates ability to rearchitect existing systems
+- **Applied AI in healthcare:** Facial recognition, real-time transcription, clinical summarization — AI in a regulated context with measurable clinical workflow impact
+- **Architecture evolution:** CRUD → event-sourced sagas with 60% code reduction — and an honest lesson about the difference between technically correct and operationally sustainable
 - **IL Emit metaprogramming:** Runtime code generation for Dapper proxy types — low-level .NET internals knowledge
-- **Scale:** 20+ microservice projects across pharmacy, clinical care, device management, and mobile device management domains
+- **Scale:** 20+ microservice projects across pharmacy, clinical care, device management, and mobile device management domains, concurrent with Call-Trader employment

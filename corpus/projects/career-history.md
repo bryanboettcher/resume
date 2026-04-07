@@ -40,15 +40,31 @@ Active personal projects: FastAddress, KbStore, Wyoming-Rust, MPC-UPS, Cloud-Orc
 **NOTE:** End date corrected from "present" to October 2025. Concurrent employment with Call-Trader.
 
 ### Kansys, Inc. — Software Architect/Lead (2020 – 2023)
-**Domain:** Telecom billing
+**Domain:** Configurable invoicing system for hospitality, manufacturing, retail, service, and subscription verticals
+**Business context:**
+- The prior version implemented billing rules as Win32 C++ COM components. The team couldn't maintain them, and the Windows dependency forced on-premises datacenter hosting for every client
+- Rewrite: reactive eventing rules engine in C#, dramatically increasing the ability to add, chain, parallelize, and test rules. The 4–5x performance improvement was achieved on existing hardware, deferring costly infrastructure expansion
+- Eliminating the Win32 dependency enabled Linux deployment, which eliminated datacenter hosting costs for most clients
+- Also enabled selling to new clients with legal or compliance hosting requirements that precluded Windows-only on-prem infrastructure
+- Zero automated tests in the original codebase → fully covered rules engine in the rewrite → all rule behavior documented and tuned against real customer expectations
 **Key metrics:** 85% unit test coverage, 95% integration test coverage
 
 ### Henry Wurst, Inc. / Mittera Creative Services — Senior Developer (2018 – 2020)
+**Domain:** Sheet-press printing company; IT had been treated as a necessary cost since the 1970s
+**Business context:**
+- The company had contracted most development work to third-party consultants — expensive, slow, and produced one-off systems with no shared foundation
+- Bryan was a full-time hire. The direct savings on consulting fees were measurable, but the larger impact was structural: building a shared core pipeline eliminated the disparate one-off integrations and cut client integration time from months to weeks
+- Introduced git, pull requests, code reviews, coding standards, kanban + sprints — none of these existed before Bryan joined
+- The business grew during this period, caught Mittera Creative Services' attention, and was acquired
 **Key achievements:**
-- Modernized development practices
-- Open-sourced distributed architecture
+- Modernized development practices (git, PRs, code reviews, sprints — introduced from scratch)
+- Shared core pipeline replaced disparate one-off client integrations
 
 ### Service Management Group — Senior Developer (2016 – 2018)
+**Domain:** Customer satisfaction survey platform; Bryan's work was on the analytics side — sentiment analysis and aggregate feedback processing
+**Business context:**
+- Analytics operations that previously took minutes were reduced to seconds through software optimization on existing infrastructure, avoiding hardware scaling costs
+- The core business depended on fast, accurate aggregation of survey data; slow analytics meant delayed client reporting
 **Key achievement:** 80% performance improvements in some applications
 
 ### iModules Software (2014 – 2016)
