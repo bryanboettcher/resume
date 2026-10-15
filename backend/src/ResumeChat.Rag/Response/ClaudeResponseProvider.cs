@@ -19,8 +19,9 @@ public sealed class ClaudeResponseProvider : ResponseProviderBase
         HttpClient httpClient,
         IOptions<ClaudeResponseOptions> options,
         IOptions<CompletionSecurityOptions> security,
+        CompletionHealth health,
         ILogger<ClaudeResponseProvider> logger)
-        : base(logger)
+        : base(logger, health)
     {
         _options = options.Value;
         _security = security.Value;

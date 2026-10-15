@@ -9,10 +9,12 @@ namespace ResumeChat.Rag.Response;
 public abstract class ResponseProviderBase : IResponseProvider, ICompletionMetadata
 {
     private readonly ILogger _logger;
+    private readonly CompletionHealth _health;
 
-    protected ResponseProviderBase(ILogger logger)
+    protected ResponseProviderBase(ILogger logger, CompletionHealth health)
     {
         _logger = logger;
+        _health = health;
     }
 
     protected abstract string ProviderName { get; }
@@ -46,8 +48,22 @@ public abstract class ResponseProviderBase : IResponseProvider, ICompletionMetad
         _logger.LogInformation("Starting {Provider} response with model {Model} ({ContextChunks} context chunks)",
             ProviderName, ModelName, payload.Documents.Count);
 
-        await foreach (var token in StreamTokensAsync(payload, cancellationToken))
+        await using var tokens = StreamTokensAsync(payload, cancellationToken).GetAsyncEnumerator(cancellationToken);
+        while (true)
         {
+            string token;
+            try
+            {
+                if (!await tokens.MoveNextAsync())
+                    break;
+                token = tokens.Current;
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                _health.RecordFailure(ex);
+                throw new CompletionUnavailableException(ProviderName, ModelName, ex);
+            }
+
             if (!firstTokenRecorded)
             {
                 RagDiagnostics.CompletionFirstTokenDuration.Record(
@@ -58,6 +74,7 @@ public abstract class ResponseProviderBase : IResponseProvider, ICompletionMetad
             yield return token;
         }
 
+        _health.RecordSuccess();
         var totalMs = Stopwatch.GetElapsedTime(totalStart).TotalMilliseconds;
         RagDiagnostics.CompletionTotalDuration.Record(totalMs);
         _logger.LogInformation("Response finished in {ElapsedMs:F1}ms", totalMs);

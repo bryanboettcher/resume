@@ -115,6 +115,7 @@ public static class WebApplicationBuilderExtensions
         builder.Services.AddTransient<IQueryTransformer, DefaultQueryTransformer>();
 
         // Response — select provider based on configuration
+        builder.Services.AddSingleton(_ => new CompletionHealth(TimeProvider.System));
         var responseProvider = builder.Configuration["Completion:Provider"];
         switch (responseProvider)
         {

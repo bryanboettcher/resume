@@ -19,8 +19,9 @@ public sealed class OllamaResponseProvider : ResponseProviderBase
         HttpClient httpClient,
         IOptions<OllamaResponseOptions> options,
         IOptions<CompletionSecurityOptions> security,
+        CompletionHealth health,
         ILogger<OllamaResponseProvider> logger)
-        : base(logger)
+        : base(logger, health)
     {
         _httpClient = httpClient;
         _options = options.Value;
