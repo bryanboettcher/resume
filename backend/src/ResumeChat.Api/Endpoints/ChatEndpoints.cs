@@ -14,7 +14,8 @@ public static class ChatEndpoints
     public static void MapTo(IEndpointRouteBuilder app)
     {
         app.MapGet("/api/chat/health", HandleHealth)
-            .Produces(StatusCodes.Status200OK);
+            .Produces(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status503ServiceUnavailable);
 
         app.MapPost("/api/chat", HandleChat)
             .AddEndpointFilter<ValidationFilter<ChatRequest>>()
@@ -25,14 +26,23 @@ public static class ChatEndpoints
             .Produces(StatusCodes.Status429TooManyRequests);
     }
 
-    private static IResult HandleHealth(IResponseProvider responseProvider)
+    private static IResult HandleHealth(IResponseProvider responseProvider, CompletionHealth health)
     {
-        var response = new { status = "healthy", provider = (string?)null, model = (string?)null };
+        var meta = responseProvider as ICompletionMetadata;
+        var snapshot = health.Snapshot();
+        var response = new
+        {
+            status = snapshot.Healthy ? "healthy" : "unhealthy",
+            provider = meta?.Provider,
+            model = meta?.Model,
+            lastSuccess = snapshot.LastSuccess,
+            lastFailure = snapshot.LastFailure,
+            lastError = snapshot.LastError
+        };
 
-        if (responseProvider is ICompletionMetadata meta)
-            response = new { status = "healthy", provider = (string?)meta.Provider, model = (string?)meta.Model };
-
-        return Results.Ok(response);
+        return snapshot.Healthy
+            ? Results.Ok(response)
+            : Results.Json(response, statusCode: StatusCodes.Status503ServiceUnavailable);
     }
 
     private static async Task<IResult> HandleChat(
@@ -82,7 +92,14 @@ public static class ChatEndpoints
         {
             RagDiagnostics.ChatErrors.Add(1);
             activity?.SetStatus(System.Diagnostics.ActivityStatusCode.Error, ex.Message);
-            throw;
+            logger.LogError(ex, "Chat request failed: {Reason}", ex.Message);
+
+            if (context.Response.HasStarted)
+                return Results.Empty;
+
+            return ex is CompletionUnavailableException
+                ? Results.Problem(title: "Completion provider unavailable", statusCode: StatusCodes.Status503ServiceUnavailable)
+                : Results.Problem(title: "Chat request failed", statusCode: StatusCodes.Status500InternalServerError);
         }
     }
 

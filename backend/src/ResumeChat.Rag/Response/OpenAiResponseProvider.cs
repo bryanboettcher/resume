@@ -23,8 +23,9 @@ public sealed class OpenAiResponseProvider : ResponseProviderBase
         HttpClient httpClient,
         IOptions<OpenAiResponseOptions> options,
         IOptions<CompletionSecurityOptions> security,
+        CompletionHealth health,
         ILogger<OpenAiResponseProvider> logger)
-        : base(logger)
+        : base(logger, health)
     {
         _httpClient = httpClient;
         _options = options.Value;

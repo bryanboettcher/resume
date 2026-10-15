@@ -31,9 +31,13 @@ public sealed class OpenAiResponseProviderTests
     private static string ReasoningChunk(string reasoning) =>
         JsonSerializer.Serialize(new { choices = new[] { new { delta = new { reasoning } } } });
 
-    private static (OpenAiResponseProvider Provider, RecordingHandler Handler) Create(string sseBody, string apiKey = "")
+    private static (OpenAiResponseProvider Provider, RecordingHandler Handler) Create(
+        string sseBody,
+        string apiKey = "",
+        HttpStatusCode status = HttpStatusCode.OK,
+        CompletionHealth? health = null)
     {
-        var handler = new RecordingHandler(sseBody);
+        var handler = new RecordingHandler(sseBody, status);
         var options = Options.Create(new OpenAiResponseOptions
         {
             BaseUrl = "https://llm.example/v1/",
@@ -43,7 +47,8 @@ public sealed class OpenAiResponseProviderTests
         });
         var security = Options.Create(new CompletionSecurityOptions { Canary = Canary });
         var provider = new OpenAiResponseProvider(
-            new HttpClient(handler), options, security, NullLogger<OpenAiResponseProvider>.Instance);
+            new HttpClient(handler), options, security, health ?? new CompletionHealth(TimeProvider.System),
+            NullLogger<OpenAiResponseProvider>.Instance);
         return (provider, handler);
     }
 
@@ -126,16 +131,34 @@ public sealed class OpenAiResponseProviderTests
     }
 
     [Test]
-    public async Task GetResponseAsync_ThrowsHttpRequestException_OnErrorStatus()
+    public async Task GetResponseAsync_OnErrorStatus_ThrowsCompletionUnavailable_AndRecordsFailure()
     {
-        var handler = new RecordingHandler("{\"error\":\"nope\"}", HttpStatusCode.BadRequest);
-        var provider = new OpenAiResponseProvider(
-            new HttpClient(handler),
-            Options.Create(new OpenAiResponseOptions { BaseUrl = "https://llm.example/v1", Model = "m" }),
-            Options.Create(new CompletionSecurityOptions { Canary = Canary }),
-            NullLogger<OpenAiResponseProvider>.Instance);
+        var health = new CompletionHealth(TimeProvider.System);
+        var (provider, _) = Create("{\"error\":\"nope\"}", status: HttpStatusCode.BadRequest, health: health);
 
-        await Should.ThrowAsync<HttpRequestException>(() => CollectAsync(provider.GetResponseAsync(Payload("hi"))));
+        var ex = await Should.ThrowAsync<CompletionUnavailableException>(
+            () => CollectAsync(provider.GetResponseAsync(Payload("hi"))));
+
+        ex.Provider.ShouldBe("OpenAI");
+        ex.Model.ShouldBe("qwen3.8");
+        ex.InnerException.ShouldBeOfType<HttpRequestException>();
+        var snapshot = health.Snapshot();
+        snapshot.Healthy.ShouldBeFalse();
+        snapshot.LastError.ShouldBe(nameof(HttpRequestException));
+    }
+
+    [Test]
+    public async Task GetResponseAsync_CompletedStream_RecordsSuccess()
+    {
+        var health = new CompletionHealth(TimeProvider.System);
+        var (provider, _) = Create(Sse(ContentChunk("ok"), "[DONE]"), health: health);
+
+        await CollectAsync(provider.GetResponseAsync(Payload("hi")));
+
+        var snapshot = health.Snapshot();
+        snapshot.Healthy.ShouldBeTrue();
+        snapshot.LastSuccess.ShouldNotBeNull();
+        snapshot.LastFailure.ShouldBeNull();
     }
 
     private static async Task<List<string>> CollectAsync(IAsyncEnumerable<string> source)
