@@ -227,13 +227,15 @@ public abstract class OpenAiResponseProvider_GetResponseAsync
         [Test]
         public void It_should_use_bearer_scheme()
         {
-            Handler.Authorization?.Scheme.ShouldBe("Bearer");
+            Handler.Authorization.ShouldNotBeNull();
+            Handler.Authorization.Scheme.ShouldBe("Bearer");
         }
 
         [Test]
         public void It_should_send_api_key_as_token()
         {
-            Handler.Authorization?.Parameter.ShouldBe("sk-test");
+            Handler.Authorization.ShouldNotBeNull();
+            Handler.Authorization.Parameter.ShouldBe("sk-test");
         }
     }
 

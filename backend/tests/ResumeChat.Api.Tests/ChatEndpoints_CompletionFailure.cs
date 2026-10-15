@@ -90,7 +90,8 @@ public abstract class ChatEndpoints_CompletionFailure
         [Test]
         public void It_should_return_problem_json()
         {
-            Response.Content.Headers.ContentType?.MediaType.ShouldBe("application/problem+json");
+            Response.Content.Headers.ContentType.ShouldNotBeNull();
+            Response.Content.Headers.ContentType.MediaType.ShouldBe("application/problem+json");
         }
 
         [Test]
