@@ -142,6 +142,14 @@ public static class WebApplicationBuilderExtensions
                 builder.Services.AddHttpClient<IResponseProvider, OllamaResponseProvider>();
                 break;
 
+            case "OpenAI":
+                builder.Services.AddOptions<OpenAiResponseOptions>()
+                    .BindConfiguration(OpenAiResponseOptions.SectionName)
+                    .ValidateDataAnnotations()
+                    .ValidateOnStart();
+                builder.Services.AddHttpClient<IResponseProvider, OpenAiResponseProvider>();
+                break;
+
             default:
                 builder.Services.AddSingleton<IResponseProvider, CannedResponseProvider>();
                 break;
